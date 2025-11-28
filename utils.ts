@@ -53,3 +53,23 @@ export const isSameDay = (d1: Date, d2: Date) => {
          d1.getMonth() === d2.getMonth() && 
          d1.getFullYear() === d2.getFullYear();
 };
+/**
+ * Calculate week ID for a given date
+ * Week ID is calculated as the week number from the start of the year
+ * @param date - The date to calculate week ID for
+ * @returns Week number (1-53)
+ */
+export const getWeekIdForDate = (date: Date): number => {
+  const startOfYear = new Date(date.getFullYear(), 0, 1);
+  const daysSinceStartOfYear = Math.floor((date.getTime() - startOfYear.getTime()) / (1000 * 60 * 60 * 24));
+  const weekNumber = Math.ceil((daysSinceStartOfYear + startOfYear.getDay() + 1) / 7);
+  return weekNumber;
+};
+
+/**
+ * Get the current week ID based on today's date
+ * @returns Current week number (1-53)
+ */
+export const getCurrentWeekId = (): number => {
+  return getWeekIdForDate(new Date());
+};

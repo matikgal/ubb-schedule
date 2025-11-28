@@ -1,25 +1,69 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { getEventsForGroup } from '../services/mockData';
 import { ClassEvent } from '../types';
-import { getDayName, getStartOfWeek, addDays, formatDateRange, isSameDay } from '../utils';
+import { getDayName, getStartOfWeek, addDays, formatDateRange, isSameDay, getWeekIdForDate } from '../utils';
 import { ChevronLeft, ChevronRight, Calendar, ChevronDown, ChevronUp, Clock } from 'lucide-react';
 import ClassCard from '../components/ClassCard';
+import Toast from '../components/Toast';
+import OfflineBadge from '../components/OfflineBadge';
+import { fetchScheduleForWeek } from '../services/scheduleService';
+import { getSelectedGroup } from '../services/groupService';
+import { ERROR_MESSAGES } from '../constants/errorMessages';
+import { useOnlineStatus } from '../hooks/useOnlineStatus';
 
 const SchedulePage: React.FC = () => {
   const [events, setEvents] = useState<ClassEvent[]>([]);
   const [currentWeekStart, setCurrentWeekStart] = useState(getStartOfWeek(new Date()));
   const [expandedDayIndex, setExpandedDayIndex] = useState<number | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [showToast, setShowToast] = useState(false);
   
   const datePickerRef = useRef<HTMLInputElement>(null);
+  const isOnline = useOnlineStatus();
   
-  // Load data
+  // Load data for current week
   useEffect(() => {
-    const saved = localStorage.getItem('selectedGroup');
-    if (saved) {
-      const group = JSON.parse(saved).group;
-      setEvents(getEventsForGroup(group));
-    }
-  }, []);
+    const loadSchedule = async () => {
+      setIsLoading(true);
+      setError(null);
+      setShowToast(false);
+      
+      try {
+        const selectedGroup = getSelectedGroup();
+        
+        console.log('📅 Selected group from localStorage:', selectedGroup);
+        
+        if (!selectedGroup) {
+          setError(ERROR_MESSAGES.NO_GROUP_SELECTED);
+          setShowToast(true);
+          setEvents([]);
+          setIsLoading(false);
+          return;
+        }
+
+        const groupId = selectedGroup.id;
+        
+        console.log('📅 Loading schedule for:', { groupId, currentWeekStart });
+        
+        // Nie przekazujemy weekId - fetchScheduleForWeek użyje pierwszego dostępnego tygodnia
+        const scheduleData = await fetchScheduleForWeek(groupId);
+        
+        console.log('📅 Schedule data received:', scheduleData);
+        
+        setEvents(scheduleData);
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : ERROR_MESSAGES.FETCH_FAILED;
+        console.error('❌ Error loading schedule:', err);
+        setError(errorMessage);
+        setShowToast(true);
+        setEvents([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadSchedule();
+  }, [currentWeekStart]);
 
   // Set initial expanded state (expand "Today" if in current week)
   useEffect(() => {
@@ -38,11 +82,11 @@ const SchedulePage: React.FC = () => {
   }, [currentWeekStart]);
 
   const handlePrevWeek = () => {
-    setCurrentWeekStart(prev => addDays(prev, -7));
+    setCurrentWeekStart((prev: Date) => addDays(prev, -7));
   };
 
   const handleNextWeek = () => {
-    setCurrentWeekStart(prev => addDays(prev, 7));
+    setCurrentWeekStart((prev: Date) => addDays(prev, 7));
   };
 
   const toggleDay = (index: number) => {
@@ -80,6 +124,9 @@ const SchedulePage: React.FC = () => {
 
   return (
     <div className="space-y-6 animate-fade-in pt-6">
+      {/* Offline Badge */}
+      <OfflineBadge isVisible={!isOnline} />
+
       <div className="flex items-end justify-between mb-2">
          <div>
             <h1 className="text-3xl font-display font-bold text-main leading-tight">Kalendarz</h1>
@@ -103,25 +150,103 @@ const SchedulePage: React.FC = () => {
       </div>
 
       {/* Week Navigator */}
-      <div className="flex items-center justify-between bg-surface rounded-xl p-2 border border-border mb-6">
-         <button onClick={handlePrevWeek} className="w-10 h-10 flex items-center justify-center hover:bg-hover rounded-lg text-muted transition-colors">
+      <div className={`flex items-center justify-between bg-surface rounded-xl p-2 border border-border mb-6 transition-opacity duration-300 ${isLoading ? 'opacity-50' : 'opacity-100'}`}>
+         <button 
+            onClick={handlePrevWeek} 
+            disabled={isLoading}
+            className="w-10 h-10 flex items-center justify-center hover:bg-hover rounded-lg text-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+         >
             <ChevronLeft size={20} />
          </button>
          
-         <div className="text-center">
+         <div className="text-center relative">
             <div className="text-xs font-bold text-muted uppercase tracking-wide mb-0.5">Tydzień</div>
             <div className="text-main font-display font-bold text-sm">
                 {formatDateRange(currentWeekStart, weekEnd)}
             </div>
+            {isLoading && (
+              <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-16 h-0.5 bg-primary rounded-full animate-pulse" />
+            )}
          </div>
 
-         <button onClick={handleNextWeek} className="w-10 h-10 flex items-center justify-center hover:bg-hover rounded-lg text-muted transition-colors">
+         <button 
+            onClick={handleNextWeek} 
+            disabled={isLoading}
+            className="w-10 h-10 flex items-center justify-center hover:bg-hover rounded-lg text-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+         >
             <ChevronRight size={20} />
          </button>
       </div>
 
+      {/* Loading State - Skeleton Screens */}
+      {isLoading && (
+        <div className="space-y-3 animate-fade-in">
+          {[0, 1, 2, 3, 4, 5, 6].map((dayOffset) => {
+            // Show expanded skeleton for "today" (index 2 for Wednesday as example)
+            const isExpandedSkeleton = dayOffset === 2;
+            
+            return (
+              <div 
+                key={dayOffset} 
+                className={`rounded-2xl border border-border bg-surface overflow-hidden transition-all duration-300`}
+                style={{ animationDelay: `${dayOffset * 50}ms` }}
+              >
+                <div className="p-4">
+                  <div className="flex items-center gap-4">
+                    {/* Day Badge Skeleton */}
+                    <div className="w-10 h-10 rounded-xl skeleton-shimmer" />
+                    
+                    {/* Day Info Skeleton */}
+                    <div className="flex-1 space-y-2">
+                      <div className="h-4 skeleton-shimmer rounded w-24" />
+                      <div className="h-3 skeleton-shimmer rounded w-16" />
+                    </div>
+                    
+                    {/* Chevron Skeleton */}
+                    <div className="w-5 h-5 rounded skeleton-shimmer" />
+                  </div>
+                </div>
+                
+                {/* Expanded Content Skeleton */}
+                {isExpandedSkeleton && (
+                  <div className="px-4 pb-4 space-y-3 animate-slide-down">
+                    <div className="h-[1px] w-full bg-border mb-4"></div>
+                    {[1, 2, 3].map((classIdx) => (
+                      <div key={classIdx} className="p-4 rounded-xl bg-hover/50 space-y-3">
+                        {/* Time skeleton */}
+                        <div className="h-3 skeleton-shimmer rounded w-20" />
+                        {/* Subject skeleton */}
+                        <div className="h-5 skeleton-shimmer rounded w-3/4" />
+                        {/* Details skeleton */}
+                        <div className="flex gap-2">
+                          <div className="h-3 skeleton-shimmer rounded w-16" />
+                          <div className="h-3 skeleton-shimmer rounded w-24" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Toast Notification */}
+      {showToast && error && !isLoading && (
+        <div className="fixed top-24 left-1/2 transform -translate-x-1/2 z-50 w-[90%] max-w-lg">
+          <Toast 
+            message={error} 
+            type="error" 
+            onClose={() => setShowToast(false)}
+            duration={5000}
+          />
+        </div>
+      )}
+
       {/* Days List (Accordion) */}
-      <div className="space-y-3">
+      {!isLoading && !error && (
+        <div className="space-y-3 animate-fade-in">
          {[0, 1, 2, 3, 4, 5, 6].map((dayOffset) => {
              const currentDate = addDays(currentWeekStart, dayOffset);
              // Convert loop index (0=Mon) to API format (1=Mon... 7=Sun)
@@ -176,7 +301,7 @@ const SchedulePage: React.FC = () => {
                                      ))}
                                  </div>
                              ) : (
-                                 <div className="flex flex-col items-center justify-center py-8 text-muted opacity-60">
+                                 <div className="flex flex-col items-center justify-center py-8 text-muted opacity-60 animate-fade-in">
                                      <Clock size={24} className="mb-2" />
                                      <p className="text-xs font-medium">Brak zaplanowanych zajęć</p>
                                  </div>
@@ -186,7 +311,8 @@ const SchedulePage: React.FC = () => {
                  </div>
              );
          })}
-      </div>
+        </div>
+      )}
       
       {/* Bottom Spacer for Nav */}
       <div className="h-12"></div>

@@ -1,9 +1,10 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { getEventsForGroup, MOCK_SCHEDULE } from '../services/mockData';
 import { ClassEvent } from '../types';
 import { getCurrentTimeMinutes, getMinutesFromMidnight, getDayName, isSameDay } from '../utils';
 import { MapPin, GraduationCap, ArrowRight, User, Plus, X, Calculator, Timer, Trash2, AlertCircle, Check, Archive, RotateCcw, CalendarRange, ExternalLink, ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
+import { fetchScheduleForWeek } from '../services/scheduleService';
+import { getSelectedGroup } from '../services/groupService';
 
 // --- Types ---
 interface Deadline {
@@ -51,39 +52,46 @@ const Home: React.FC = () => {
 
   // --- Load Initial Data ---
   useEffect(() => {
-    // Load Group/Events based on SELECTED DATE
-    const savedGroup = localStorage.getItem('selectedGroup');
-    let eventsToProcess: ClassEvent[] = [];
-    
-    // Calculate API Day (1=Mon ... 7=Sun) based on selectedDate
-    const dayIndex = selectedDate.getDay(); 
-    const apiDay = dayIndex === 0 ? 7 : dayIndex;
-
-    if (!savedGroup) {
+    const loadScheduleData = async () => {
+      const selectedGroup = getSelectedGroup();
+      
+      if (!selectedGroup) {
         setIsDemo(true);
-        // In demo mode, just show Monday if the day matches Monday, otherwise show nothing or mock data
-        eventsToProcess = MOCK_SCHEDULE.filter(e => e.dayOfWeek === apiDay);
-        // If empty in demo mode, maybe show Monday's data just so it's not empty for the user
-        if (eventsToProcess.length === 0 && apiDay === 1) {
-            eventsToProcess = MOCK_SCHEDULE.filter(e => e.dayOfWeek === 1);
+        setTodaysEvents([]);
+        return;
+      }
+      
+      setIsDemo(false);
+      
+      try {
+        // Pobierz wszystkie zajęcia dla grupy
+        const allEvents = await fetchScheduleForWeek(selectedGroup.id);
+        
+        // Calculate API Day (1=Mon ... 7=Sun) based on selectedDate
+        const dayIndex = selectedDate.getDay(); 
+        const apiDay = dayIndex === 0 ? 7 : dayIndex;
+        
+        // Filtruj zajęcia dla wybranego dnia
+        const eventsToProcess = allEvents.filter(e => e.dayOfWeek === apiDay);
+        
+        const sortedEvents = eventsToProcess.sort((a, b) => 
+          getMinutesFromMidnight(a.startTime) - getMinutesFromMidnight(b.startTime)
+        );
+        
+        setTodaysEvents(sortedEvents);
+        
+        // Reset progress if changing days
+        if (!isSameDay(selectedDate, new Date())) {
+          setProgress(0);
+          setActiveIndex(0);
         }
-    } else {
-        const parsedGroup = JSON.parse(savedGroup);
-        const groupCode = parsedGroup.group || '5A'; 
-        const allEvents = getEventsForGroup(groupCode);
-        eventsToProcess = allEvents.filter(e => e.dayOfWeek === apiDay);
-    }
+      } catch (error) {
+        console.error('Error loading schedule:', error);
+        setTodaysEvents([]);
+      }
+    };
     
-    const sortedEvents = eventsToProcess.sort((a, b) => 
-      getMinutesFromMidnight(a.startTime) - getMinutesFromMidnight(b.startTime)
-    );
-    setTodaysEvents(sortedEvents);
-
-    // Reset progress if changing days
-    if (!isSameDay(selectedDate, new Date())) {
-        setProgress(0);
-        setActiveIndex(0);
-    }
+    loadScheduleData();
 
     // Load Deadlines & Archive
     const savedDeadlines = JSON.parse(localStorage.getItem('user-deadlines') || '[]');
@@ -440,7 +448,7 @@ const Home: React.FC = () => {
                                         </div>
                                         <div className="flex items-center gap-2">
                                             <User size={14} className="opacity-70" />
-                                            <span className="truncate opacity-80">{evt.teacher}</span>
+                                            <span className="opacity-80">{evt.teacher}</span>
                                         </div>
                                     </div>
                                 </div>

@@ -54,7 +54,7 @@ const ClassCard: React.FC<ClassCardProps> = ({ event, isActive, isLast }) => {
                      </div>
                      <div className="flex items-center gap-1.5 text-xs text-muted">
                         <User size={14} className="opacity-70" />
-                        <span className="truncate max-w-[120px]">{event.teacher}</span>
+                        <span>{event.teacher}</span>
                      </div>
                 </div>
              </div>
