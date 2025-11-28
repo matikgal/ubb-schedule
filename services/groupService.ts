@@ -1,213 +1,361 @@
-import { supabase } from './supabaseClient';
-import { GroupInfo } from '../types';
-import { ERROR_MESSAGES } from '../constants/errorMessages';
+import { supabase, isSupabaseAvailable } from './supabaseClient'
+import { GroupInfo } from '../types'
+import { ERROR_MESSAGES } from '../constants/errorMessages'
+
+// LocalStorage keys
+const FACULTIES_KEY = 'cached_faculties'
+const MAJORS_KEY_PREFIX = 'cached_majors_'
+const GROUPS_KEY_PREFIX = 'cached_groups_'
+const ALL_GROUPS_KEY = 'cached_all_groups'
 
 /**
- * Pobiera unikalne wydziały z bazy danych Supabase
- * Requirements: 1.2
+ * Pobiera unikalne wydziały - najpierw z localStorage, potem z Supabase
  */
 export async function fetchFaculties(): Promise<string[]> {
-  try {
-    // Check if offline
-    if (!navigator.onLine) {
-      throw new Error(ERROR_MESSAGES.NO_CONNECTION);
-    }
+	try {
+		// 1. Zawsze najpierw sprawdź localStorage
+		const cached = localStorage.getItem(FACULTIES_KEY)
+		if (cached) {
+			const faculties = JSON.parse(cached)
+			console.log('📦 Using cached faculties:', faculties)
 
-    const { data, error } = await supabase
-      .from('schedules')
-      .select('faculty');
+			// Jeśli jest internet i Supabase, zaktualizuj w tle
+			if (navigator.onLine && isSupabaseAvailable && supabase) {
+				updateFacultiesInBackground()
+			}
 
-    console.log('📊 Supabase response (faculties):', { data, error });
+			return faculties
+		}
 
-    if (error) {
-      throw new Error(`Failed to fetch faculties: ${error.message}`);
-    }
+		// 2. Jeśli nie ma cache, spróbuj pobrać z Supabase
+		if (!isSupabaseAvailable || !supabase) {
+			console.log('📴 No Supabase and no cache available')
+			return []
+		}
 
-    if (!data) {
-      return [];
-    }
+		if (!navigator.onLine) {
+			throw new Error(ERROR_MESSAGES.NO_CONNECTION)
+		}
 
-    // Wyodrębnij unikalne wydziały
-    const uniqueFaculties = Array.from(
-      new Set(data.map((row) => row.faculty).filter(Boolean))
-    );
+		const { data, error } = await supabase.from('schedules').select('faculty')
 
-    console.log('✅ Unique faculties:', uniqueFaculties);
+		console.log('📊 Supabase response (faculties):', { data, error })
 
-    return uniqueFaculties.sort();
-  } catch (error) {
-    console.error('Error fetching faculties:', error);
-    throw error;
-  }
+		if (error) {
+			throw new Error(`Failed to fetch faculties: ${error.message}`)
+		}
+
+		if (!data) {
+			return []
+		}
+
+		const uniqueFaculties = Array.from(new Set(data.map(row => row.faculty).filter(Boolean)))
+
+		const sorted = uniqueFaculties.sort()
+
+		// Zapisz do cache
+		localStorage.setItem(FACULTIES_KEY, JSON.stringify(sorted))
+		console.log('✅ Faculties cached:', sorted)
+
+		return sorted
+	} catch (error) {
+		console.error('Error fetching faculties:', error)
+
+		// Fallback do cache jeśli jest błąd
+		const cached = localStorage.getItem(FACULTIES_KEY)
+		if (cached) {
+			return JSON.parse(cached)
+		}
+
+		throw error
+	}
+}
+
+/**
+ * Aktualizuje wydziały w tle (nie blokuje UI)
+ */
+async function updateFacultiesInBackground(): Promise<void> {
+	try {
+		if (!supabase) return
+
+		const { data, error } = await supabase.from('schedules').select('faculty')
+
+		if (!error && data) {
+			const uniqueFaculties = Array.from(new Set(data.map(row => row.faculty).filter(Boolean)))
+			const sorted = uniqueFaculties.sort()
+			localStorage.setItem(FACULTIES_KEY, JSON.stringify(sorted))
+			console.log('🔄 Faculties updated in background')
+		}
+	} catch (error) {
+		console.log('Background update failed (ignored):', error)
+	}
 }
 
 /**
  * Usuwa końcówki S (stacjonarne) lub NW (niestacjonarne) z nazwy kierunku
- * @param major - Pełna nazwa kierunku z końcówką (np. "Informatyka S")
- * @returns Czysta nazwa kierunku (np. "Informatyka")
  */
 function cleanMajorName(major: string): string {
-  // Usuń końcówki S lub NW (z opcjonalną spacją przed)
-  return major.replace(/\s*(S|NW)$/i, '').trim();
+	return major.replace(/\s*(S|NW)$/i, '').trim()
 }
 
 /**
- * Pobiera kierunki dla wybranego wydziału (bez końcówek S/NW)
- * Requirements: 1.2
+ * Pobiera kierunki dla wybranego wydziału - najpierw z localStorage
  */
 export async function fetchMajorsForFaculty(faculty: string): Promise<string[]> {
-  try {
-    // Check if offline
-    if (!navigator.onLine) {
-      throw new Error(ERROR_MESSAGES.NO_CONNECTION);
-    }
+	try {
+		const cacheKey = `${MAJORS_KEY_PREFIX}${faculty}`
 
-    console.log('🔍 Fetching majors for faculty:', faculty);
+		// 1. Sprawdź cache
+		const cached = localStorage.getItem(cacheKey)
+		if (cached) {
+			const majors = JSON.parse(cached)
+			console.log('📦 Using cached majors for', faculty, ':', majors)
 
-    const { data, error } = await supabase
-      .from('schedules')
-      .select('major')
-      .eq('faculty', faculty);
+			// Aktualizuj w tle
+			if (navigator.onLine && isSupabaseAvailable && supabase) {
+				updateMajorsInBackground(faculty)
+			}
 
-    console.log('📊 Supabase response (majors):', { data, error });
+			return majors
+		}
 
-    if (error) {
-      throw new Error(`Failed to fetch majors: ${error.message}`);
-    }
+		// 2. Pobierz z Supabase
+		if (!isSupabaseAvailable || !supabase) {
+			console.log('📴 No Supabase and no cache available')
+			return []
+		}
 
-    if (!data) {
-      return [];
-    }
+		if (!navigator.onLine) {
+			throw new Error(ERROR_MESSAGES.NO_CONNECTION)
+		}
 
-    // Wyodrębnij unikalne kierunki i usuń końcówki S/NW
-    const rawMajors = data.map((row) => row.major).filter(Boolean);
-    console.log('📝 Raw majors from DB:', rawMajors);
+		console.log('🔍 Fetching majors for faculty:', faculty)
 
-    const cleanedMajors = rawMajors.map((major) => cleanMajorName(major));
-    console.log('🧹 Cleaned majors:', cleanedMajors);
+		const { data, error } = await supabase.from('schedules').select('major').eq('faculty', faculty)
 
-    const uniqueMajors = Array.from(new Set(cleanedMajors));
-    console.log('✅ Unique majors:', uniqueMajors);
+		console.log('📊 Supabase response (majors):', { data, error })
 
-    return uniqueMajors.sort();
-  } catch (error) {
-    console.error('Error fetching majors:', error);
-    throw error;
-  }
+		if (error) {
+			throw new Error(`Failed to fetch majors: ${error.message}`)
+		}
+
+		if (!data) {
+			return []
+		}
+
+		const rawMajors = data.map(row => row.major).filter(Boolean)
+		const cleanedMajors = rawMajors.map(major => cleanMajorName(major))
+		const uniqueMajors = Array.from(new Set(cleanedMajors))
+		const sorted = uniqueMajors.sort()
+
+		// Zapisz do cache
+		localStorage.setItem(cacheKey, JSON.stringify(sorted))
+		console.log('✅ Majors cached')
+
+		return sorted
+	} catch (error) {
+		console.error('Error fetching majors:', error)
+
+		// Fallback do cache
+		const cacheKey = `${MAJORS_KEY_PREFIX}${faculty}`
+		const cached = localStorage.getItem(cacheKey)
+		if (cached) {
+			return JSON.parse(cached)
+		}
+
+		throw error
+	}
 }
 
-/**
- * Pobiera grupy dla wybranego kierunku, wydziału i trybu studiów
- * Uwaga: major w bazie ma końcówki S/NW, więc musimy filtrować po czystej nazwie
- * Requirements: 1.2
- */
+async function updateMajorsInBackground(faculty: string): Promise<void> {
+	try {
+		if (!supabase) return
+
+		const { data, error } = await supabase.from('schedules').select('major').eq('faculty', faculty)
+
+		if (!error && data) {
+			const rawMajors = data.map(row => row.major).filter(Boolean)
+			const cleanedMajors = rawMajors.map(major => cleanMajorName(major))
+			const uniqueMajors = Array.from(new Set(cleanedMajors))
+			const sorted = uniqueMajors.sort()
+
+			const cacheKey = `${MAJORS_KEY_PREFIX}${faculty}`
+			localStorage.setItem(cacheKey, JSON.stringify(sorted))
+			console.log('🔄 Majors updated in background')
+		}
+	} catch (error) {
+		console.log('Background update failed (ignored):', error)
+	}
+}
+
 /**
  * Wyciąga numer semestru z nazwy grupy
- * @param groupName - Nazwa grupy (np. "Fil ang/S/Ist/1sem/1gr")
- * @returns Numer semestru lub null
  */
 function extractSemesterFromGroupName(groupName: string): number | null {
-  const match = groupName.match(/(\d+)sem/i);
-  return match ? parseInt(match[1], 10) : null;
+	const match = groupName.match(/(\d+)sem/i)
+	return match ? parseInt(match[1], 10) : null
 }
 
+/**
+ * Pobiera grupy - najpierw z localStorage
+ */
 export async function fetchGroupsForMajor(
-  faculty: string,
-  major: string,
-  studyType: string,
-  semester?: number
+	faculty: string,
+	major: string,
+	studyType: string,
+	semester?: number
 ): Promise<GroupInfo[]> {
-  try {
-    // Check if offline
-    if (!navigator.onLine) {
-      throw new Error(ERROR_MESSAGES.NO_CONNECTION);
-    }
+	try {
+		const cacheKey = `${GROUPS_KEY_PREFIX}${faculty}_${major}_${studyType}`
 
-    console.log('🔍 Fetching groups for:', { faculty, major, studyType, semester });
+		// 1. Sprawdź cache
+		const cached = localStorage.getItem(cacheKey)
+		if (cached) {
+			let groups: GroupInfo[] = JSON.parse(cached)
+			console.log('📦 Using cached groups:', groups.length)
 
-    // Zbuduj pełną nazwę kierunku z końcówką (np. "Informatyka S")
-    const majorWithSuffix = `${major} ${studyType}`;
-    console.log('🔧 Major with suffix:', majorWithSuffix);
+			// Filtruj po semestrze
+			if (semester) {
+				groups = groups.filter(g => g.semester === semester)
+			}
 
-    // Pobierz grupy dla wydziału i pełnej nazwy kierunku
-    const { data, error } = await supabase
-      .from('schedules')
-      .select('group_id, group_name, faculty, major, study_type, weeks_count')
-      .eq('faculty', faculty)
-      .eq('major', majorWithSuffix);
+			// Aktualizuj w tle
+			if (navigator.onLine && isSupabaseAvailable && supabase) {
+				updateGroupsInBackground(faculty, major, studyType)
+			}
 
-    console.log('📊 Supabase response (groups):', { data, error, count: data?.length });
+			return groups
+		}
 
-    if (error) {
-      throw new Error(`Failed to fetch groups: ${error.message}`);
-    }
+		// 2. Pobierz z Supabase
+		if (!isSupabaseAvailable || !supabase) {
+			console.log('📴 No Supabase and no cache available')
+			return []
+		}
 
-    if (!data) {
-      return [];
-    }
+		if (!navigator.onLine) {
+			throw new Error(ERROR_MESSAGES.NO_CONNECTION)
+		}
 
-    // Filtruj po semestrze jeśli podano
-    let filteredData = data;
-    if (semester) {
-      filteredData = data.filter((row) => {
-        const groupSemester = extractSemesterFromGroupName(row.group_name);
-        const matches = groupSemester === semester;
-        console.log(`  Group: "${row.group_name}" → semester: ${groupSemester} === ${semester} ? ${matches}`);
-        return matches;
-      });
-      console.log('✅ Filtered by semester:', filteredData.length);
-    }
+		console.log('🔍 Fetching groups for:', { faculty, major, studyType, semester })
 
-    // Transformuj dane z Supabase do formatu GroupInfo
-    const groups: GroupInfo[] = filteredData.map((row) => ({
-      id: row.group_id,
-      name: row.group_name,
-      faculty: row.faculty,
-      field: cleanMajorName(row.major), // Zapisz czystą nazwę kierunku
-      studyType: row.study_type,
-      weeksCount: row.weeks_count,
-      semester: extractSemesterFromGroupName(row.group_name) || undefined,
-    }));
+		const majorWithSuffix = `${major} ${studyType}`
 
-    console.log('🎯 Final groups:', groups);
+		const { data, error } = await supabase
+			.from('schedules')
+			.select('group_id, group_name, faculty, major, study_type, weeks_count')
+			.eq('faculty', faculty)
+			.eq('major', majorWithSuffix)
 
-    return groups;
-  } catch (error) {
-    console.error('Error fetching groups:', error);
-    throw error;
-  }
+		console.log('📊 Supabase response (groups):', { data, error, count: data?.length })
+
+		if (error) {
+			throw new Error(`Failed to fetch groups: ${error.message}`)
+		}
+
+		if (!data) {
+			return []
+		}
+
+		// Transformuj dane
+		const groups: GroupInfo[] = data.map(row => ({
+			id: row.group_id,
+			name: row.group_name,
+			faculty: row.faculty,
+			field: cleanMajorName(row.major),
+			studyType: row.study_type,
+			weeksCount: row.weeks_count,
+			semester: extractSemesterFromGroupName(row.group_name) || undefined,
+		}))
+
+		// Zapisz do cache
+		localStorage.setItem(cacheKey, JSON.stringify(groups))
+		console.log('✅ Groups cached')
+
+		// Filtruj po semestrze
+		if (semester) {
+			return groups.filter(g => g.semester === semester)
+		}
+
+		return groups
+	} catch (error) {
+		console.error('Error fetching groups:', error)
+
+		// Fallback do cache
+		const cacheKey = `${GROUPS_KEY_PREFIX}${faculty}_${major}_${studyType}`
+		const cached = localStorage.getItem(cacheKey)
+		if (cached) {
+			let groups: GroupInfo[] = JSON.parse(cached)
+			if (semester) {
+				groups = groups.filter(g => g.semester === semester)
+			}
+			return groups
+		}
+
+		throw error
+	}
+}
+
+async function updateGroupsInBackground(faculty: string, major: string, studyType: string): Promise<void> {
+	try {
+		if (!supabase) return
+
+		const majorWithSuffix = `${major} ${studyType}`
+
+		const { data, error } = await supabase
+			.from('schedules')
+			.select('group_id, group_name, faculty, major, study_type, weeks_count')
+			.eq('faculty', faculty)
+			.eq('major', majorWithSuffix)
+
+		if (!error && data) {
+			const groups: GroupInfo[] = data.map(row => ({
+				id: row.group_id,
+				name: row.group_name,
+				faculty: row.faculty,
+				field: cleanMajorName(row.major),
+				studyType: row.study_type,
+				weeksCount: row.weeks_count,
+				semester: extractSemesterFromGroupName(row.group_name) || undefined,
+			}))
+
+			const cacheKey = `${GROUPS_KEY_PREFIX}${faculty}_${major}_${studyType}`
+			localStorage.setItem(cacheKey, JSON.stringify(groups))
+			console.log('🔄 Groups updated in background')
+		}
+	} catch (error) {
+		console.log('Background update failed (ignored):', error)
+	}
 }
 
 /**
  * Zapisuje wybraną grupę do localStorage
- * Requirements: 1.3
  */
 export function saveSelectedGroup(groupInfo: GroupInfo): void {
-  try {
-    const groupData = JSON.stringify(groupInfo);
-    localStorage.setItem('selectedGroup', groupData);
-  } catch (error) {
-    console.error('Error saving selected group:', error);
-    throw new Error('Failed to save selected group to localStorage');
-  }
+	try {
+		const groupData = JSON.stringify(groupInfo)
+		localStorage.setItem('selectedGroup', groupData)
+	} catch (error) {
+		console.error('Error saving selected group:', error)
+		throw new Error('Failed to save selected group to localStorage')
+	}
 }
 
 /**
  * Pobiera wybraną grupę z localStorage
- * Requirements: 1.3
  */
 export function getSelectedGroup(): GroupInfo | null {
-  try {
-    const groupData = localStorage.getItem('selectedGroup');
-    
-    if (!groupData) {
-      return null;
-    }
+	try {
+		const groupData = localStorage.getItem('selectedGroup')
 
-    const groupInfo: GroupInfo = JSON.parse(groupData);
-    return groupInfo;
-  } catch (error) {
-    console.error('Error retrieving selected group:', error);
-    return null;
-  }
+		if (!groupData) {
+			return null
+		}
+
+		const groupInfo: GroupInfo = JSON.parse(groupData)
+		return groupInfo
+	} catch (error) {
+		console.error('Error retrieving selected group:', error)
+		return null
+	}
 }
