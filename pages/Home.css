@@ -1,0 +1,57 @@
+/* Custom Swiper Styles for Carousel */
+.swiper {
+	width: 100%;
+	padding-top: 20px;
+	padding-bottom: 20px;
+	overflow: visible !important;
+}
+
+.swiper-wrapper {
+	align-items: center;
+}
+
+.swiper-slide {
+	background-position: center;
+	background-size: cover;
+	transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+	display: flex;
+	justify-content: center;
+	align-items: center;
+}
+
+/* Center slide is largest and fully visible */
+.swiper-slide-active {
+	opacity: 1 !important;
+	z-index: 3;
+	transform: scale(1.05) !important;
+}
+
+/* Side slides are smaller and partially visible */
+.swiper-slide-prev,
+.swiper-slide-next {
+	opacity: 0.6 !important;
+	z-index: 2;
+	transform: scale(0.88) !important;
+}
+
+/* Other slides - even more faded */
+.swiper-slide:not(.swiper-slide-active):not(.swiper-slide-prev):not(.swiper-slide-next) {
+	opacity: 0.3 !important;
+	z-index: 1;
+	transform: scale(0.75) !important;
+}
+
+/* Hide pagination dots */
+.swiper-pagination {
+	display: none;
+}
+
+/* Ensure smooth transitions */
+.swiper-slide > div {
+	transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Navigation dots styling */
+.swiper + .flex {
+	margin-top: -8px;
+}

@@ -55,8 +55,16 @@ const PrivacyPage = () => {
 }
 
 const SettingsPage = () => {
-	const savedGroup = localStorage.getItem('selectedGroup')
-	const groupData = savedGroup ? JSON.parse(savedGroup) : null
+	const [groupData, setGroupData] = useState<any>(null)
+
+	useEffect(() => {
+		const loadGroup = async () => {
+			const { getSelectedGroup } = await import('./services/groupService')
+			const group = await getSelectedGroup()
+			setGroupData(group)
+		}
+		loadGroup()
+	}, [])
 
 	const { currentTheme, setTheme, isDarkMode, toggleDarkMode, nickname, setNickname, avatarSeed, setAvatarSeed } =
 		useTheme()
@@ -72,9 +80,34 @@ const SettingsPage = () => {
 	const lastSyncDate = '15 Paź 2023, 04:30'
 	const avatarOptions = ['Alexander', 'Aneka', 'Felix', 'Jake', 'Jocelyn', 'Micah', 'Minia', 'Robert', 'Sorell', 'Zoe']
 
-	const handleClearHistory = () => {
-		// Simulate clearing search history logic
-		alert('Historia wyszukiwania została wyczyszczona.')
+	const handleClearAppData = async () => {
+		if (
+			!confirm(
+				'Czy na pewno chcesz wyczyścić wszystkie dane aplikacji? To usunie:\n\n• Zapisaną grupę\n• Nazwę użytkownika i awatar\n• Cache planów zajęć\n• Wszystkie ustawienia\n\nAplikacja zostanie zrestartowana.'
+			)
+		) {
+			return
+		}
+
+		try {
+			// Wyczyść localStorage
+			localStorage.clear()
+
+			// Wyczyść Capacitor Preferences (na mobile)
+			try {
+				const { storage } = await import('./services/storage')
+				await storage.clear()
+			} catch (e) {
+				// Ignore if not on mobile
+			}
+
+			// Restart aplikacji
+			alert('Dane zostały wyczyszczone. Aplikacja zostanie zrestartowana.')
+			window.location.reload()
+		} catch (error) {
+			console.error('Error clearing data:', error)
+			alert('Wystąpił błąd podczas czyszczenia danych.')
+		}
 	}
 
 	const handleNameSave = () => {
@@ -282,13 +315,16 @@ const SettingsPage = () => {
 					</div>
 
 					<div
-						onClick={handleClearHistory}
+						onClick={handleClearAppData}
 						className="p-4 flex items-center justify-between hover:bg-red-500/5 transition-colors cursor-pointer group">
 						<div className="flex items-center gap-3">
 							<Trash2 size={18} className="text-muted group-hover:text-red-400 transition-colors" />
-							<span className="text-main text-sm font-medium group-hover:text-red-400 transition-colors">
-								Wyczyść historię
-							</span>
+							<div>
+								<span className="text-main text-sm font-medium group-hover:text-red-400 transition-colors block">
+									Wyczyść dane aplikacji
+								</span>
+								<span className="text-[10px] text-muted">Usuwa grupę, cache i ustawienia</span>
+							</div>
 						</div>
 					</div>
 
@@ -305,8 +341,9 @@ const SettingsPage = () => {
 			</section>
 
 			<button
-				onClick={() => {
-					localStorage.removeItem('selectedGroup')
+				onClick={async () => {
+					const { storage } = await import('./services/storage')
+					await storage.removeItem('selectedGroup')
 					window.location.href = '#/'
 					window.location.reload()
 				}}
@@ -351,10 +388,18 @@ const SettingsPage = () => {
 const App: React.FC = () => {
 	const [loading, setLoading] = useState(true)
 
-	const handlePreloaderFinish = () => {
+	const handlePreloaderFinish = async () => {
 		// Force navigation to Home (root) when app starts
 		window.location.hash = '/'
 		setLoading(false)
+
+		// Ukryj natywny splash screen po zakończeniu animacji
+		try {
+			const { SplashScreen } = await import('@capacitor/splash-screen')
+			await SplashScreen.hide()
+		} catch (e) {
+			// Ignore if not on mobile
+		}
 	}
 
 	// Initialize data on first load

@@ -46,3 +46,24 @@ FIX_MAJOR_SELECTION.md
 # OS files
 Thumbs.db
 .DS_Store
+
+# Android
+android/.gradle
+android/build
+android/app/build
+android/.idea
+android/local.properties
+android/*.iml
+android/.DS_Store
+android/captures
+android/.externalNativeBuild
+android/.cxx
+
+# Capacitor
+.capacitor
+android/app/src/main/assets/public
+
+# Keystore files (NIGDY nie commituj!)
+*.keystore
+*.jks
+key.properties

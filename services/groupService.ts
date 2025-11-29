@@ -1,30 +1,29 @@
 import { supabase, isSupabaseAvailable } from './supabaseClient'
 import { GroupInfo } from '../types'
 import { ERROR_MESSAGES } from '../constants/errorMessages'
+import { storage, getJSON, setJSON } from './storage'
 
-// LocalStorage keys
+// Storage keys
 const FACULTIES_KEY = 'cached_faculties'
 const MAJORS_KEY_PREFIX = 'cached_majors_'
 const GROUPS_KEY_PREFIX = 'cached_groups_'
-const ALL_GROUPS_KEY = 'cached_all_groups'
 
 /**
- * Pobiera unikalne wydziały - najpierw z localStorage, potem z Supabase
+ * Pobiera unikalne wydziały - najpierw ze storage, potem z Supabase
  */
 export async function fetchFaculties(): Promise<string[]> {
 	try {
-		// 1. Zawsze najpierw sprawdź localStorage
-		const cached = localStorage.getItem(FACULTIES_KEY)
+		// 1. Zawsze najpierw sprawdź storage
+		const cached = await getJSON<string[]>(FACULTIES_KEY)
 		if (cached) {
-			const faculties = JSON.parse(cached)
-			console.log('📦 Using cached faculties:', faculties)
+			console.log('📦 Using cached faculties:', cached)
 
 			// Jeśli jest internet i Supabase, zaktualizuj w tle
 			if (navigator.onLine && isSupabaseAvailable && supabase) {
 				updateFacultiesInBackground()
 			}
 
-			return faculties
+			return cached
 		}
 
 		// 2. Jeśli nie ma cache, spróbuj pobrać z Supabase
@@ -54,7 +53,7 @@ export async function fetchFaculties(): Promise<string[]> {
 		const sorted = uniqueFaculties.sort()
 
 		// Zapisz do cache
-		localStorage.setItem(FACULTIES_KEY, JSON.stringify(sorted))
+		await setJSON(FACULTIES_KEY, sorted)
 		console.log('✅ Faculties cached:', sorted)
 
 		return sorted
@@ -62,18 +61,15 @@ export async function fetchFaculties(): Promise<string[]> {
 		console.error('Error fetching faculties:', error)
 
 		// Fallback do cache jeśli jest błąd
-		const cached = localStorage.getItem(FACULTIES_KEY)
+		const cached = await getJSON<string[]>(FACULTIES_KEY)
 		if (cached) {
-			return JSON.parse(cached)
+			return cached
 		}
 
 		throw error
 	}
 }
 
-/**
- * Aktualizuje wydziały w tle (nie blokuje UI)
- */
 async function updateFacultiesInBackground(): Promise<void> {
 	try {
 		if (!supabase) return
@@ -83,7 +79,7 @@ async function updateFacultiesInBackground(): Promise<void> {
 		if (!error && data) {
 			const uniqueFaculties = Array.from(new Set(data.map(row => row.faculty).filter(Boolean)))
 			const sorted = uniqueFaculties.sort()
-			localStorage.setItem(FACULTIES_KEY, JSON.stringify(sorted))
+			await setJSON(FACULTIES_KEY, sorted)
 			console.log('🔄 Faculties updated in background')
 		}
 	} catch (error) {
@@ -91,35 +87,25 @@ async function updateFacultiesInBackground(): Promise<void> {
 	}
 }
 
-/**
- * Usuwa końcówki S (stacjonarne) lub NW (niestacjonarne) z nazwy kierunku
- */
 function cleanMajorName(major: string): string {
 	return major.replace(/\s*(S|NW)$/i, '').trim()
 }
 
-/**
- * Pobiera kierunki dla wybranego wydziału - najpierw z localStorage
- */
 export async function fetchMajorsForFaculty(faculty: string): Promise<string[]> {
 	try {
 		const cacheKey = `${MAJORS_KEY_PREFIX}${faculty}`
 
-		// 1. Sprawdź cache
-		const cached = localStorage.getItem(cacheKey)
+		const cached = await getJSON<string[]>(cacheKey)
 		if (cached) {
-			const majors = JSON.parse(cached)
-			console.log('📦 Using cached majors for', faculty, ':', majors)
+			console.log('📦 Using cached majors for', faculty, ':', cached)
 
-			// Aktualizuj w tle
 			if (navigator.onLine && isSupabaseAvailable && supabase) {
 				updateMajorsInBackground(faculty)
 			}
 
-			return majors
+			return cached
 		}
 
-		// 2. Pobierz z Supabase
 		if (!isSupabaseAvailable || !supabase) {
 			console.log('📴 No Supabase and no cache available')
 			return []
@@ -148,19 +134,17 @@ export async function fetchMajorsForFaculty(faculty: string): Promise<string[]> 
 		const uniqueMajors = Array.from(new Set(cleanedMajors))
 		const sorted = uniqueMajors.sort()
 
-		// Zapisz do cache
-		localStorage.setItem(cacheKey, JSON.stringify(sorted))
+		await setJSON(cacheKey, sorted)
 		console.log('✅ Majors cached')
 
 		return sorted
 	} catch (error) {
 		console.error('Error fetching majors:', error)
 
-		// Fallback do cache
 		const cacheKey = `${MAJORS_KEY_PREFIX}${faculty}`
-		const cached = localStorage.getItem(cacheKey)
+		const cached = await getJSON<string[]>(cacheKey)
 		if (cached) {
-			return JSON.parse(cached)
+			return cached
 		}
 
 		throw error
@@ -180,7 +164,7 @@ async function updateMajorsInBackground(faculty: string): Promise<void> {
 			const sorted = uniqueMajors.sort()
 
 			const cacheKey = `${MAJORS_KEY_PREFIX}${faculty}`
-			localStorage.setItem(cacheKey, JSON.stringify(sorted))
+			await setJSON(cacheKey, sorted)
 			console.log('🔄 Majors updated in background')
 		}
 	} catch (error) {
@@ -188,17 +172,11 @@ async function updateMajorsInBackground(faculty: string): Promise<void> {
 	}
 }
 
-/**
- * Wyciąga numer semestru z nazwy grupy
- */
 function extractSemesterFromGroupName(groupName: string): number | null {
 	const match = groupName.match(/(\d+)sem/i)
 	return match ? parseInt(match[1], 10) : null
 }
 
-/**
- * Pobiera grupy - najpierw z localStorage
- */
 export async function fetchGroupsForMajor(
 	faculty: string,
 	major: string,
@@ -208,18 +186,15 @@ export async function fetchGroupsForMajor(
 	try {
 		const cacheKey = `${GROUPS_KEY_PREFIX}${faculty}_${major}_${studyType}`
 
-		// 1. Sprawdź cache
-		const cached = localStorage.getItem(cacheKey)
+		const cached = await getJSON<GroupInfo[]>(cacheKey)
 		if (cached) {
-			let groups: GroupInfo[] = JSON.parse(cached)
+			let groups = cached
 			console.log('📦 Using cached groups:', groups.length)
 
-			// Filtruj po semestrze
 			if (semester) {
 				groups = groups.filter(g => g.semester === semester)
 			}
 
-			// Aktualizuj w tle
 			if (navigator.onLine && isSupabaseAvailable && supabase) {
 				updateGroupsInBackground(faculty, major, studyType)
 			}
@@ -227,7 +202,6 @@ export async function fetchGroupsForMajor(
 			return groups
 		}
 
-		// 2. Pobierz z Supabase
 		if (!isSupabaseAvailable || !supabase) {
 			console.log('📴 No Supabase and no cache available')
 			return []
@@ -257,7 +231,6 @@ export async function fetchGroupsForMajor(
 			return []
 		}
 
-		// Transformuj dane
 		const groups: GroupInfo[] = data.map(row => ({
 			id: row.group_id,
 			name: row.group_name,
@@ -268,11 +241,14 @@ export async function fetchGroupsForMajor(
 			semester: extractSemesterFromGroupName(row.group_name) || undefined,
 		}))
 
-		// Zapisz do cache
-		localStorage.setItem(cacheKey, JSON.stringify(groups))
-		console.log('✅ Groups cached')
+		// Try to cache, but don't fail if quota exceeded
+		try {
+			await setJSON(cacheKey, groups)
+			console.log('✅ Groups cached')
+		} catch (cacheError) {
+			console.warn('⚠️ Could not cache groups (quota exceeded), continuing without cache:', cacheError)
+		}
 
-		// Filtruj po semestrze
 		if (semester) {
 			return groups.filter(g => g.semester === semester)
 		}
@@ -281,11 +257,10 @@ export async function fetchGroupsForMajor(
 	} catch (error) {
 		console.error('Error fetching groups:', error)
 
-		// Fallback do cache
 		const cacheKey = `${GROUPS_KEY_PREFIX}${faculty}_${major}_${studyType}`
-		const cached = localStorage.getItem(cacheKey)
+		const cached = await getJSON<GroupInfo[]>(cacheKey)
 		if (cached) {
-			let groups: GroupInfo[] = JSON.parse(cached)
+			let groups = cached
 			if (semester) {
 				groups = groups.filter(g => g.semester === semester)
 			}
@@ -320,7 +295,7 @@ async function updateGroupsInBackground(faculty: string, major: string, studyTyp
 			}))
 
 			const cacheKey = `${GROUPS_KEY_PREFIX}${faculty}_${major}_${studyType}`
-			localStorage.setItem(cacheKey, JSON.stringify(groups))
+			await setJSON(cacheKey, groups)
 			console.log('🔄 Groups updated in background')
 		}
 	} catch (error) {
@@ -328,32 +303,44 @@ async function updateGroupsInBackground(faculty: string, major: string, studyTyp
 	}
 }
 
-/**
- * Zapisuje wybraną grupę do localStorage
- */
-export function saveSelectedGroup(groupInfo: GroupInfo): void {
+export async function saveSelectedGroup(groupInfo: GroupInfo): Promise<void> {
 	try {
-		const groupData = JSON.stringify(groupInfo)
-		localStorage.setItem('selectedGroup', groupData)
+		await setJSON('selectedGroup', groupInfo)
 	} catch (error) {
 		console.error('Error saving selected group:', error)
-		throw new Error('Failed to save selected group to localStorage')
+
+		// If quota exceeded, clear old cache and try again
+		if (error instanceof Error && error.name === 'QuotaExceededError') {
+			console.warn('⚠️ Storage quota exceeded, clearing old cache...')
+
+			// Clear all cached groups (they can be re-fetched)
+			const storage = await import('./storage')
+			const allKeys = await storage.storage.keys()
+
+			for (const key of allKeys) {
+				if (key.startsWith(GROUPS_KEY_PREFIX) || key.startsWith(FACULTIES_KEY) || key.startsWith(MAJORS_KEY_PREFIX)) {
+					await storage.storage.removeItem(key)
+					console.log(`🗑️ Cleared cache: ${key}`)
+				}
+			}
+
+			// Try saving again
+			try {
+				await setJSON('selectedGroup', groupInfo)
+				console.log('✅ Selected group saved after clearing cache')
+			} catch (retryError) {
+				console.error('❌ Still failed after clearing cache:', retryError)
+				throw new Error('Failed to save selected group even after clearing cache')
+			}
+		} else {
+			throw new Error('Failed to save selected group to storage')
+		}
 	}
 }
 
-/**
- * Pobiera wybraną grupę z localStorage
- */
-export function getSelectedGroup(): GroupInfo | null {
+export async function getSelectedGroup(): Promise<GroupInfo | null> {
 	try {
-		const groupData = localStorage.getItem('selectedGroup')
-
-		if (!groupData) {
-			return null
-		}
-
-		const groupInfo: GroupInfo = JSON.parse(groupData)
-		return groupInfo
+		return await getJSON<GroupInfo>('selectedGroup')
 	} catch (error) {
 		console.error('Error retrieving selected group:', error)
 		return null

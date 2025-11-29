@@ -50,11 +50,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 				<div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] rounded-full bg-blue-500/5 blur-[120px] animate-float"></div>
 			</div>
 
-			{/* Modern Clean Header */}
+			{/* Modern Clean Header - z safe area top */}
 			<header
 				className={`fixed top-0 left-0 right-0 z-40 transition-colors duration-300 px-6 py-4 flex items-center justify-between border-b ${
 					scrolled ? 'bg-background/90 backdrop-blur-md border-border' : 'bg-transparent border-transparent'
-				}`}>
+				}`}
+				style={{ paddingTop: 'max(1rem, env(safe-area-inset-top))' }}>
 				<div className="flex flex-col">
 					<span className="text-xs font-bold text-muted uppercase tracking-wide mb-0.5 flex items-center gap-2">
 						{dateStr}
@@ -81,11 +82,25 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 				</Link>
 			</header>
 
-			{/* Main Content */}
-			<main className="relative z-10 pt-28 pb-32 px-5 max-w-lg mx-auto md:max-w-2xl">{children}</main>
+			{/* Main Content - z większym padding top i bottom safe area */}
+			<main
+				className="relative z-10 px-5 max-w-lg mx-auto md:max-w-2xl"
+				style={{
+					paddingTop: 'calc(7rem + env(safe-area-inset-top))',
+					paddingBottom: 'calc(9rem + env(safe-area-inset-bottom))',
+				}}>
+				{children}
+			</main>
 
-			{/* Floating Modern Navigation (Swiss Style) */}
-			<nav className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 w-[95%] max-w-lg">
+			{/* Czarny pasek na dole (safe area) */}
+			<div
+				className="fixed bottom-0 left-0 right-0 bg-background z-40"
+				style={{ height: 'env(safe-area-inset-bottom)' }}></div>
+
+			{/* Floating Modern Navigation (Swiss Style) - z safe area bottom */}
+			<nav
+				className="fixed left-1/2 transform -translate-x-1/2 z-50 w-[95%] max-w-lg"
+				style={{ bottom: 'calc(1.5rem + env(safe-area-inset-bottom))' }}>
 				<div className="glass-nav rounded-2xl p-1.5 flex items-center justify-between shadow-2xl">
 					{navItems.map(item => {
 						const isActive = location.pathname === item.path

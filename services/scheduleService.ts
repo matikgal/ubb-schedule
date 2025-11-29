@@ -4,22 +4,17 @@ import { getCachedSchedule, setCachedSchedule, isCacheValid } from './cacheManag
 import { transformSupabaseToClassEvents } from './transformers'
 import { ERROR_MESSAGES } from '../constants/errorMessages'
 
-// Re-export ERROR_MESSAGES for backward compatibility
 export { ERROR_MESSAGES }
 
-/**
- * Pobiera plan zajęć - najpierw z localStorage, potem z Supabase
- */
 export async function fetchScheduleForWeek(groupId: number, weekId?: number): Promise<ClassEvent[]> {
 	try {
-		// Step 1: Check cache first (zawsze sprawdzamy cache)
-		const cachedData = weekId ? getCachedSchedule(groupId, weekId) : null
+		// Step 1: Check cache first
+		const cachedData = weekId ? await getCachedSchedule(groupId, weekId) : null
 
 		// Step 2: Jeśli mamy cache, użyj go i zaktualizuj w tle
 		if (cachedData) {
 			console.log('📦 Using cached schedule data')
 
-			// Aktualizuj w tle jeśli jest internet i Supabase
 			if (navigator.onLine && isSupabaseAvailable && supabase) {
 				updateScheduleInBackground(groupId, weekId)
 			}
@@ -37,7 +32,6 @@ export async function fetchScheduleForWeek(groupId: number, weekId?: number): Pr
 			throw new Error(ERROR_MESSAGES.NO_CONNECTION)
 		}
 
-		// Step 4: Fetch from Supabase
 		console.log('🔍 Fetching from Supabase:', { groupId, weekId })
 
 		const { data, error } = await supabase.from('schedules').select('*').eq('group_id', groupId).single()
@@ -68,7 +62,6 @@ export async function fetchScheduleForWeek(groupId: number, weekId?: number): Pr
 			throw new Error(ERROR_MESSAGES.NO_DATA)
 		}
 
-		// Jeśli nie podano weekId lub nie ma danych dla tego tygodnia, użyj pierwszego dostępnego
 		let actualWeekKey: string
 		if (!weekId || !scheduleRow.data.weeks[weekId.toString()]) {
 			actualWeekKey = availableWeeks[0]
@@ -77,7 +70,6 @@ export async function fetchScheduleForWeek(groupId: number, weekId?: number): Pr
 			actualWeekKey = weekId.toString()
 		}
 
-		// Step 5: Extract week data from JSON
 		const weekData = scheduleRow.data.weeks[actualWeekKey]
 
 		console.log('🗓️ Week data for week', actualWeekKey, ':', !!weekData)
@@ -87,7 +79,6 @@ export async function fetchScheduleForWeek(groupId: number, weekId?: number): Pr
 			throw new Error(ERROR_MESSAGES.NO_DATA)
 		}
 
-		// Step 6: Transform data to ClassEvent format
 		const events: ClassEvent[] = []
 
 		for (const [dayName, classItems] of Object.entries(weekData.schedule)) {
@@ -97,33 +88,26 @@ export async function fetchScheduleForWeek(groupId: number, weekId?: number): Pr
 			}
 		}
 
-		// Step 7: Cache the fresh data
 		const actualWeekId = parseInt(actualWeekKey, 10)
-		setCachedSchedule(groupId, actualWeekId, events, scheduleRow.updated_at)
+		await setCachedSchedule(groupId, actualWeekId, events, scheduleRow.updated_at)
 
 		return events
 	} catch (error) {
-		// Final fallback to cache on any error
-		const cachedData = getCachedSchedule(groupId, weekId)
+		const cachedData = await getCachedSchedule(groupId, weekId)
 		if (cachedData) {
 			console.warn('Error fetching schedule, using cache:', error)
 			return cachedData
 		}
 
-		// Re-throw if it's already a user-friendly error
 		if (error instanceof Error && Object.values(ERROR_MESSAGES).some(msg => msg === error.message)) {
 			throw error
 		}
 
-		// Generic error for unexpected issues
 		console.error('Unexpected error in fetchScheduleForWeek:', error)
 		throw new Error(ERROR_MESSAGES.FETCH_FAILED)
 	}
 }
 
-/**
- * Aktualizuje plan zajęć w tle (nie blokuje UI)
- */
 async function updateScheduleInBackground(groupId: number, weekId?: number): Promise<void> {
 	try {
 		if (!supabase) return
@@ -146,8 +130,7 @@ async function updateScheduleInBackground(groupId: number, weekId?: number): Pro
 
 		const actualWeekId = parseInt(actualWeekKey, 10)
 
-		// Sprawdź czy cache jest aktualny
-		if (isCacheValid(groupId, actualWeekId, scheduleRow.updated_at)) {
+		if (await isCacheValid(groupId, actualWeekId, scheduleRow.updated_at)) {
 			console.log('🔄 Cache is up to date')
 			return
 		}
@@ -164,7 +147,7 @@ async function updateScheduleInBackground(groupId: number, weekId?: number): Pro
 			}
 		}
 
-		setCachedSchedule(groupId, actualWeekId, events, scheduleRow.updated_at)
+		await setCachedSchedule(groupId, actualWeekId, events, scheduleRow.updated_at)
 		console.log('🔄 Schedule updated in background')
 	} catch (error) {
 		console.log('Background update failed (ignored):', error)

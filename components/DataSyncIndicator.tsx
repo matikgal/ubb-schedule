@@ -1,15 +1,19 @@
 import React, { useState, useEffect } from 'react'
-import { Download, Check, Wifi, WifiOff } from 'lucide-react'
+import { Download, WifiOff } from 'lucide-react'
 import { isDataInitialized } from '../services/dataInitializer'
 
 const DataSyncIndicator: React.FC = () => {
-	const [isInitialized, setIsInitialized] = useState(isDataInitialized())
+	const [isInitialized, setIsInitialized] = useState(false)
 	const [isOnline, setIsOnline] = useState(navigator.onLine)
 
 	useEffect(() => {
+		// Sprawdź początkowy stan
+		isDataInitialized().then(setIsInitialized)
+
 		// Sprawdzaj co 2 sekundy czy dane zostały zainicjalizowane
-		const interval = setInterval(() => {
-			setIsInitialized(isDataInitialized())
+		const interval = setInterval(async () => {
+			const initialized = await isDataInitialized()
+			setIsInitialized(initialized)
 		}, 2000)
 
 		// Nasłuchuj zmian statusu online/offline

@@ -1,22 +1,24 @@
 import { supabase, isSupabaseAvailable } from './supabaseClient'
 import { GroupInfo } from '../types'
+import { storage, setJSON, getJSON } from './storage'
 
 const INIT_FLAG_KEY = 'data_initialized'
 
 /**
  * Sprawdza czy dane zostały już zainicjalizowane
  */
-export function isDataInitialized(): boolean {
-	return localStorage.getItem(INIT_FLAG_KEY) === 'true'
+export async function isDataInitialized(): Promise<boolean> {
+	const value = await storage.getItem(INIT_FLAG_KEY)
+	return value === 'true'
 }
 
 /**
- * Pobiera WSZYSTKIE dane z Supabase i zapisuje do localStorage
+ * Pobiera WSZYSTKIE dane z Supabase i zapisuje do storage
  * OPTYMALIZACJA: Nie zapisujemy surowych danych, tylko od razu przetwarzamy
  */
 export async function initializeAllData(): Promise<void> {
 	// Jeśli już zainicjalizowane, pomiń
-	if (isDataInitialized()) {
+	if (await isDataInitialized()) {
 		console.log('📦 Data already initialized')
 		return
 	}
@@ -53,7 +55,7 @@ export async function initializeAllData(): Promise<void> {
 
 		// 1. Wyodrębnij i zapisz wydziały
 		const faculties = Array.from(new Set(data.map((row: any) => row.faculty).filter(Boolean))).sort()
-		localStorage.setItem('cached_faculties', JSON.stringify(faculties))
+		await setJSON('cached_faculties', faculties)
 		console.log(`✅ Cached ${faculties.length} faculties`)
 
 		// 2. Wyodrębnij i zapisz kierunki dla każdego wydziału
@@ -65,18 +67,17 @@ export async function initializeAllData(): Promise<void> {
 				facultyMajorsMap.set(row.faculty, new Set())
 			}
 
-			// Usuń końcówki S/NW z nazwy kierunku
 			const cleanMajor = row.major.replace(/\s*(S|NW)$/i, '').trim()
 			facultyMajorsMap.get(row.faculty)!.add(cleanMajor)
 		})
 
-		facultyMajorsMap.forEach((majors, faculty) => {
+		for (const [faculty, majors] of facultyMajorsMap.entries()) {
 			const sortedMajors = Array.from(majors).sort()
-			localStorage.setItem(`cached_majors_${faculty}`, JSON.stringify(sortedMajors))
-		})
+			await setJSON(`cached_majors_${faculty}`, sortedMajors)
+		}
 		console.log(`✅ Cached majors for ${facultyMajorsMap.size} faculties`)
 
-		// 3. Wyodrębnij i zapisz grupy dla każdej kombinacji wydział+kierunek+tryb
+		// 3. Wyodrębnij i zapisz grupy
 		const groupsMap = new Map<string, GroupInfo[]>()
 
 		data.forEach((row: any) => {
@@ -103,100 +104,88 @@ export async function initializeAllData(): Promise<void> {
 			groupsMap.get(key)!.push(groupInfo)
 		})
 
-		groupsMap.forEach((groups, key) => {
-			localStorage.setItem(`cached_groups_${key}`, JSON.stringify(groups))
-		})
+		for (const [key, groups] of groupsMap.entries()) {
+			await setJSON(`cached_groups_${key}`, groups)
+		}
 		console.log(`✅ Cached groups for ${groupsMap.size} combinations`)
 
-		// 4. Zapisz plany zajęć dla każdej grupy (TYLKO dla pierwszego tygodnia - oszczędność miejsca)
+		// 4. Zapisz plany zajęć (wszystkie tygodnie - teraz mamy miejsce!)
 		let schedulesCount = 0
-		data.forEach((row: any) => {
-			if (!row.data || !row.data.weeks) return
+		for (const row of data) {
+			if (!row.data || !row.data.weeks) continue
 
 			const availableWeeks = Object.keys(row.data.weeks)
 
-			// Zapisz tylko pierwszy tydzień dla każdej grupy (oszczędność miejsca)
-			const firstWeekKey = availableWeeks[0]
-			if (!firstWeekKey) return
+			for (const weekKey of availableWeeks) {
+				const weekData = row.data.weeks[weekKey]
+				if (!weekData || !weekData.schedule) continue
 
-			const weekData = row.data.weeks[firstWeekKey]
-			if (!weekData || !weekData.schedule) return
+				const weekId = parseInt(weekKey, 10)
+				const events: any[] = []
 
-			const weekId = parseInt(firstWeekKey, 10)
-			const events: any[] = []
+				for (const [dayName, classItems] of Object.entries(weekData.schedule)) {
+					if (!Array.isArray(classItems) || classItems.length === 0) continue
 
-			// Transformuj dane do formatu ClassEvent
-			for (const [dayName, classItems] of Object.entries(weekData.schedule)) {
-				if (!Array.isArray(classItems) || classItems.length === 0) continue
+					const dayMap: Record<string, number> = {
+						Poniedziałek: 1,
+						Wtorek: 2,
+						Środa: 3,
+						Czwartek: 4,
+						Piątek: 5,
+						Sobota: 6,
+						Niedziela: 7,
+					}
 
-				const dayMap: Record<string, number> = {
-					Poniedziałek: 1,
-					Wtorek: 2,
-					Środa: 3,
-					Czwartek: 4,
-					Piątek: 5,
-					Sobota: 6,
-					Niedziela: 7,
+					const dayOfWeek = dayMap[dayName] || 1
+
+					;(classItems as any[]).forEach((item: any) => {
+						const event = {
+							id: `${row.group_id}-${weekId}-${dayOfWeek}-${item.start_time}-${item.subject}`,
+							subject: item.subject,
+							type: extractClassType(item.subject),
+							startTime: item.start_time,
+							endTime: item.end_time,
+							room: item.room_name,
+							teacher: item.teacher_initials,
+							dayOfWeek: dayOfWeek,
+							groups: [row.group_name],
+							weekId: weekId,
+						}
+						events.push(event)
+					})
 				}
 
-				const dayOfWeek = dayMap[dayName] || 1
+				const cacheKey = `schedule_cache_${row.group_id}_${weekId}`
+				const cacheEntry = {
+					data: events,
+					updatedAt: row.updated_at,
+					cachedAt: Date.now(),
+				}
 
-				;(classItems as any[]).forEach((item: any) => {
-					const event = {
-						id: `${row.group_id}-${weekId}-${dayOfWeek}-${item.start_time}-${item.subject}`,
-						subject: item.subject,
-						type: extractClassType(item.subject),
-						startTime: item.start_time,
-						endTime: item.end_time,
-						room: item.room_name,
-						teacher: item.teacher_initials,
-						dayOfWeek: dayOfWeek,
-						groups: [row.group_name],
-						weekId: weekId,
-					}
-					events.push(event)
-				})
+				try {
+					await setJSON(cacheKey, cacheEntry)
+					schedulesCount++
+				} catch (e) {
+					console.warn('⚠️ Error saving schedule:', e)
+				}
 			}
-
-			// Zapisz do cache
-			const cacheKey = `schedule_cache_${row.group_id}_${weekId}`
-			const cacheEntry = {
-				data: events,
-				updatedAt: row.updated_at,
-				cachedAt: Date.now(),
-			}
-
-			try {
-				localStorage.setItem(cacheKey, JSON.stringify(cacheEntry))
-				schedulesCount++
-			} catch (e) {
-				// Jeśli localStorage jest pełny, przestań zapisywać plany
-				console.warn('⚠️ localStorage full, skipping remaining schedules')
-				return
-			}
-		})
+		}
 
 		console.log(`✅ Cached ${schedulesCount} schedule weeks`)
 
 		// Oznacz jako zainicjalizowane
-		localStorage.setItem(INIT_FLAG_KEY, 'true')
+		await storage.setItem(INIT_FLAG_KEY, 'true')
 		console.log('🎉 Data initialization complete!')
 	} catch (error) {
 		console.error('❌ Error during data initialization:', error)
 	}
 }
 
-/**
- * Wyciąga numer semestru z nazwy grupy
- */
 function extractSemesterFromGroupName(groupName: string): number | null {
 	const match = groupName.match(/(\d+)sem/i)
 	return match ? parseInt(match[1], 10) : null
 }
 
-/**
- * Wyciąga typ zajęć z nazwy przedmiotu
- */
 function extractClassType(subject: string): string {
 	const types = ['WYK', 'CW', 'LAB', 'PRO', 'SEM']
 	for (const type of types) {
@@ -205,20 +194,15 @@ function extractClassType(subject: string): string {
 	return 'WYK'
 }
 
-/**
- * Resetuje dane (do testowania)
- */
-export function resetAllData(): void {
-	// Usuń flagę inicjalizacji
-	localStorage.removeItem(INIT_FLAG_KEY)
+export async function resetAllData(): Promise<void> {
+	await storage.removeItem(INIT_FLAG_KEY)
 
-	// Usuń wszystkie cache
-	const keys = Object.keys(localStorage)
-	keys.forEach(key => {
+	const keys = await storage.keys()
+	for (const key of keys) {
 		if (key.startsWith('cached_') || key.startsWith('schedule_cache_')) {
-			localStorage.removeItem(key)
+			await storage.removeItem(key)
 		}
-	})
+	}
 
 	console.log('🔄 Data reset - will reinitialize on next load')
 }
