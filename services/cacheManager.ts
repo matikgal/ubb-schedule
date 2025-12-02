@@ -3,11 +3,11 @@ import { storage, getJSON, setJSON } from './storage'
 
 const CACHE_KEY_PREFIX = 'schedule_cache'
 
-function getCacheKey(groupId: number, weekId: number): string {
+function getCacheKey(groupId: number, weekId: number | string): string {
 	return `${CACHE_KEY_PREFIX}_${groupId}_${weekId}`
 }
 
-export async function getCachedSchedule(groupId: number, weekId: number): Promise<ClassEvent[] | null> {
+export async function getCachedSchedule(groupId: number, weekId: number | string): Promise<ClassEvent[] | null> {
 	try {
 		const key = getCacheKey(groupId, weekId)
 		const entry = await getJSON<CacheEntry>(key)
@@ -25,7 +25,7 @@ export async function getCachedSchedule(groupId: number, weekId: number): Promis
 
 export async function setCachedSchedule(
 	groupId: number,
-	weekId: number,
+	weekId: number | string,
 	data: ClassEvent[],
 	updatedAt: string
 ): Promise<void> {

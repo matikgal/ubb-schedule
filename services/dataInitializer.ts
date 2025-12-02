@@ -109,69 +109,9 @@ export async function initializeAllData(): Promise<void> {
 		}
 		console.log(`✅ Cached groups for ${groupsMap.size} combinations`)
 
-		// 4. Zapisz plany zajęć (wszystkie tygodnie - teraz mamy miejsce!)
-		let schedulesCount = 0
-		for (const row of data) {
-			if (!row.data || !row.data.weeks) continue
-
-			const availableWeeks = Object.keys(row.data.weeks)
-
-			for (const weekKey of availableWeeks) {
-				const weekData = row.data.weeks[weekKey]
-				if (!weekData || !weekData.schedule) continue
-
-				const weekId = parseInt(weekKey, 10)
-				const events: any[] = []
-
-				for (const [dayName, classItems] of Object.entries(weekData.schedule)) {
-					if (!Array.isArray(classItems) || classItems.length === 0) continue
-
-					const dayMap: Record<string, number> = {
-						Poniedziałek: 1,
-						Wtorek: 2,
-						Środa: 3,
-						Czwartek: 4,
-						Piątek: 5,
-						Sobota: 6,
-						Niedziela: 7,
-					}
-
-					const dayOfWeek = dayMap[dayName] || 1
-
-					;(classItems as any[]).forEach((item: any) => {
-						const event = {
-							id: `${row.group_id}-${weekId}-${dayOfWeek}-${item.start_time}-${item.subject}`,
-							subject: item.subject,
-							type: extractClassType(item.subject),
-							startTime: item.start_time,
-							endTime: item.end_time,
-							room: item.room_name,
-							teacher: item.teacher_initials,
-							dayOfWeek: dayOfWeek,
-							groups: [row.group_name],
-							weekId: weekId,
-						}
-						events.push(event)
-					})
-				}
-
-				const cacheKey = `schedule_cache_${row.group_id}_${weekId}`
-				const cacheEntry = {
-					data: events,
-					updatedAt: row.updated_at,
-					cachedAt: Date.now(),
-				}
-
-				try {
-					await setJSON(cacheKey, cacheEntry)
-					schedulesCount++
-				} catch (e) {
-					console.warn('⚠️ Error saving schedule:', e)
-				}
-			}
-		}
-
-		console.log(`✅ Cached ${schedulesCount} schedule weeks`)
+		// 4. DON'T cache schedules - they're too large
+		// Schedules will be fetched on demand when user selects a group
+		console.log(`✅ Skipped schedule caching (fetched on demand)`)
 
 		// Oznacz jako zainicjalizowane
 		await storage.setItem(INIT_FLAG_KEY, 'true')

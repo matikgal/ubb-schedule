@@ -2,6 +2,7 @@ import { supabase, isSupabaseAvailable } from './supabaseClient'
 import { GroupInfo } from '../types'
 import { ERROR_MESSAGES } from '../constants/errorMessages'
 import { storage, getJSON, setJSON } from './storage'
+import { enhancedCacheManager, CACHE_TTL, CACHE_PRIORITY } from './enhancedCacheManager'
 
 // Storage keys
 const FACULTIES_KEY = 'cached_faculties'
@@ -305,42 +306,20 @@ async function updateGroupsInBackground(faculty: string, major: string, studyTyp
 
 export async function saveSelectedGroup(groupInfo: GroupInfo): Promise<void> {
 	try {
-		await setJSON('selectedGroup', groupInfo)
+		await enhancedCacheManager.set('selectedGroup', groupInfo, {
+			ttl: CACHE_TTL.SELECTED_GROUP,
+			priority: CACHE_PRIORITY.CRITICAL,
+		})
+		console.log('✅ Selected group saved with critical priority')
 	} catch (error) {
 		console.error('Error saving selected group:', error)
-
-		// If quota exceeded, clear old cache and try again
-		if (error instanceof Error && error.name === 'QuotaExceededError') {
-			console.warn('⚠️ Storage quota exceeded, clearing old cache...')
-
-			// Clear all cached groups (they can be re-fetched)
-			const storage = await import('./storage')
-			const allKeys = await storage.storage.keys()
-
-			for (const key of allKeys) {
-				if (key.startsWith(GROUPS_KEY_PREFIX) || key.startsWith(FACULTIES_KEY) || key.startsWith(MAJORS_KEY_PREFIX)) {
-					await storage.storage.removeItem(key)
-					console.log(`🗑️ Cleared cache: ${key}`)
-				}
-			}
-
-			// Try saving again
-			try {
-				await setJSON('selectedGroup', groupInfo)
-				console.log('✅ Selected group saved after clearing cache')
-			} catch (retryError) {
-				console.error('❌ Still failed after clearing cache:', retryError)
-				throw new Error('Failed to save selected group even after clearing cache')
-			}
-		} else {
-			throw new Error('Failed to save selected group to storage')
-		}
+		throw new Error('Failed to save selected group to storage')
 	}
 }
 
 export async function getSelectedGroup(): Promise<GroupInfo | null> {
 	try {
-		return await getJSON<GroupInfo>('selectedGroup')
+		return await enhancedCacheManager.get<GroupInfo>('selectedGroup')
 	} catch (error) {
 		console.error('Error retrieving selected group:', error)
 		return null

@@ -12,7 +12,8 @@ import { useOnlineStatus } from '../hooks/useOnlineStatus'
 
 const SchedulePage: React.FC = () => {
 	const [events, setEvents] = useState<ClassEvent[]>([])
-	const [currentWeekStart, setCurrentWeekStart] = useState(getStartOfWeek(new Date()))
+	const [currentWeekId, setCurrentWeekId] = useState<string | null>(null)
+	const [availableWeeks, setAvailableWeeks] = useState<Array<{ id: string; label: string; start: Date; end: Date }>>([])
 	const [expandedDayIndex, setExpandedDayIndex] = useState<number | null>(null)
 	const [isLoading, setIsLoading] = useState(false)
 	const [error, setError] = useState<string | null>(null)
@@ -20,6 +21,30 @@ const SchedulePage: React.FC = () => {
 
 	const datePickerRef = useRef<HTMLInputElement>(null)
 	const isOnline = useOnlineStatus()
+	
+	// Get current week data
+	const currentWeek = availableWeeks.find(w => w.id === currentWeekId)
+	const currentWeekStart = currentWeek?.start || new Date()
+	const weekEnd = currentWeek?.end || addDays(currentWeekStart, 6)
+
+	// Load available weeks on mount
+	useEffect(() => {
+		const loadWeeks = async () => {
+			const selectedGroup = await getSelectedGroup()
+			if (!selectedGroup) return
+
+			const { getAvailableWeeks, getCurrentWeekId } = await import('../services/scheduleService')
+			const weeks = await getAvailableWeeks(selectedGroup.id)
+			setAvailableWeeks(weeks)
+
+			const currentId = await getCurrentWeekId(selectedGroup.id)
+			if (currentId) {
+				setCurrentWeekId(currentId)
+			}
+		}
+
+		loadWeeks()
+	}, [])
 
 	// Load data for current week
 	useEffect(() => {
@@ -31,8 +56,6 @@ const SchedulePage: React.FC = () => {
 			try {
 				const selectedGroup = await getSelectedGroup()
 
-				console.log('📅 Selected group from localStorage:', selectedGroup)
-
 				if (!selectedGroup) {
 					setError(ERROR_MESSAGES.NO_GROUP_SELECTED)
 					setShowToast(true)
@@ -41,15 +64,14 @@ const SchedulePage: React.FC = () => {
 					return
 				}
 
-				const groupId = selectedGroup.id
+				// If no weekId, show empty (no classes)
+				if (!currentWeekId) {
+					setEvents([])
+					setIsLoading(false)
+					return
+				}
 
-				console.log('📅 Loading schedule for:', { groupId, currentWeekStart })
-
-				// Nie przekazujemy weekId - fetchScheduleForWeek użyje pierwszego dostępnego tygodnia
-				const scheduleData = await fetchScheduleForWeek(groupId)
-
-				console.log('📅 Schedule data received:', scheduleData)
-
+				const scheduleData = await fetchScheduleForWeek(selectedGroup.id, currentWeekId)
 				setEvents(scheduleData)
 			} catch (err) {
 				const errorMessage = err instanceof Error ? err.message : ERROR_MESSAGES.FETCH_FAILED
@@ -62,31 +84,57 @@ const SchedulePage: React.FC = () => {
 			}
 		}
 
-		loadSchedule()
-	}, [currentWeekStart])
+		if (currentWeekId !== null) {
+			loadSchedule()
+		}
+	}, [currentWeekId])
 
 	// Set initial expanded state (expand "Today" if in current week)
 	useEffect(() => {
+		if (!currentWeek) return
+		
 		const today = new Date()
-		const startOfCurrentWeek = getStartOfWeek(today)
-
-		// If the view is showing the current week
-		if (isSameDay(currentWeekStart, startOfCurrentWeek)) {
-			// 0 = Sunday, 1 = Monday... but our loop is 0-6 relative to Monday
-			const todayDay = today.getDay() // 0-6 (Sun-Sat)
-			const dayIndex = todayDay === 0 ? 6 : todayDay - 1 // Convert to 0=Mon, 6=Sun
+		
+		// Check if today is in current week
+		if (today >= currentWeek.start && today <= currentWeek.end) {
+			const todayDay = today.getDay()
+			const dayIndex = todayDay === 0 ? 6 : todayDay - 1
 			setExpandedDayIndex(dayIndex)
 		} else {
-			setExpandedDayIndex(null) // Collapse all for other weeks
+			setExpandedDayIndex(null)
 		}
-	}, [currentWeekStart])
+	}, [currentWeekId])
 
 	const handlePrevWeek = () => {
-		setCurrentWeekStart((prev: Date) => addDays(prev, -7))
+		if (!currentWeekId || availableWeeks.length === 0) return
+		
+		const currentIndex = availableWeeks.findIndex(w => w.id === currentWeekId)
+		if (currentIndex > 0) {
+			setCurrentWeekId(availableWeeks[currentIndex - 1].id)
+		} else {
+			// No more weeks before - show empty
+			setCurrentWeekId(null)
+			setEvents([])
+		}
 	}
 
 	const handleNextWeek = () => {
-		setCurrentWeekStart((prev: Date) => addDays(prev, 7))
+		if (availableWeeks.length === 0) return
+		
+		// If no current week, start from first
+		if (!currentWeekId) {
+			setCurrentWeekId(availableWeeks[0].id)
+			return
+		}
+		
+		const currentIndex = availableWeeks.findIndex(w => w.id === currentWeekId)
+		if (currentIndex < availableWeeks.length - 1) {
+			setCurrentWeekId(availableWeeks[currentIndex + 1].id)
+		} else {
+			// No more weeks after - show empty
+			setCurrentWeekId(null)
+			setEvents([])
+		}
 	}
 
 	const toggleDay = (index: number) => {
@@ -100,8 +148,13 @@ const SchedulePage: React.FC = () => {
 	const handleDateSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
 		if (e.target.value) {
 			const selected = new Date(e.target.value)
-			const startOfWeek = getStartOfWeek(selected)
-			setCurrentWeekStart(startOfWeek)
+			
+			// Find week that contains this date
+			const matchingWeek = availableWeeks.find(w => selected >= w.start && selected <= w.end)
+			
+			if (matchingWeek) {
+				setCurrentWeekId(matchingWeek.id)
+			}
 		}
 	}
 
@@ -119,7 +172,6 @@ const SchedulePage: React.FC = () => {
 		}
 	}
 
-	const weekEnd = addDays(currentWeekStart, 6)
 	const todayDate = new Date()
 
 	return (
@@ -151,7 +203,9 @@ const SchedulePage: React.FC = () => {
 			{/* Week Info */}
 			<div className="text-center mb-6">
 				<div className="text-xs font-bold text-muted uppercase tracking-wide mb-0.5">Tydzień</div>
-				<div className="text-main font-display font-bold text-base">{formatDateRange(currentWeekStart, weekEnd)}</div>
+				<div className="text-main font-display font-bold text-base">
+					{currentWeek ? currentWeek.label : 'Brak zajęć'}
+				</div>
 				{isLoading && <div className="mt-2 mx-auto w-16 h-0.5 bg-primary rounded-full animate-pulse" />}
 			</div>
 
