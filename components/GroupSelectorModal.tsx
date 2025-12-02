@@ -178,7 +178,7 @@ const GroupSelectorModal: React.FC<GroupSelectorModalProps> = ({ isOpen, onClose
 
 	const handleBack = () => {
 		const steps: Step[] = ['role', 'faculty', 'major', 'studyType', 'semester', 'group']
-		
+
 		if (currentStep === 'allTeachers') {
 			setCurrentStep('role')
 			return
@@ -243,7 +243,9 @@ const GroupSelectorModal: React.FC<GroupSelectorModalProps> = ({ isOpen, onClose
 							)}
 							<div>
 								<h3 className="font-display font-bold text-lg text-main">{getStepTitle()}</h3>
-								<p className="text-xs text-muted">Krok {getStepNumber()} z {selectedRole === 'teacher' ? 2 : 6}</p>
+								<p className="text-xs text-muted">
+									Krok {getStepNumber()} z {selectedRole === 'teacher' ? 2 : 6}
+								</p>
 							</div>
 						</div>
 						<button onClick={onClose} className="p-2 hover:bg-hover rounded-lg transition-colors">
@@ -365,7 +367,7 @@ const GroupSelectorModal: React.FC<GroupSelectorModalProps> = ({ isOpen, onClose
 							{/* All Teachers */}
 							{currentStep === 'allTeachers' && (
 								<>
-									<div className="sticky top-0 bg-surface z-10 pb-4">
+									<div className="sticky top-0 bg-surface z-10 -mt-6 pt-6 pb-4 shadow-[0_8px_8px_0_rgba(0,0,0,0.1)]">
 										<input
 											type="text"
 											placeholder="Szukaj wykładowcy..."
@@ -375,7 +377,7 @@ const GroupSelectorModal: React.FC<GroupSelectorModalProps> = ({ isOpen, onClose
 											autoFocus
 										/>
 									</div>
-									
+
 									{filteredTeachers.length === 0 ? (
 										<div className="text-center py-8 text-muted">
 											{searchTerm ? 'Nie znaleziono wykładowcy' : 'Brak dostępnych wykładowców'}
@@ -390,7 +392,10 @@ const GroupSelectorModal: React.FC<GroupSelectorModalProps> = ({ isOpen, onClose
 													<span className="text-main font-medium block">{teacher.name}</span>
 													<span className="text-[10px] text-muted">{teacher.faculty}</span>
 												</div>
-												<Check size={18} className="text-primary opacity-0 group-hover:opacity-100 transition-opacity" />
+												<Check
+													size={18}
+													className="text-primary opacity-0 group-hover:opacity-100 transition-opacity"
+												/>
 											</button>
 										))
 									)}
@@ -410,5 +415,3 @@ const GroupSelectorModal: React.FC<GroupSelectorModalProps> = ({ isOpen, onClose
 }
 
 export default GroupSelectorModal
-
-

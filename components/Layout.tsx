@@ -12,9 +12,24 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 	const location = useLocation()
 	const [scrolled, setScrolled] = useState(false)
 	const [dateStr, setDateStr] = useState('')
+	const [isTeacher, setIsTeacher] = useState(false)
 
 	// Get data from context to ensure live updates
 	const { nickname, avatarSeed } = useTheme()
+
+	// Check if selected group is a teacher
+	useEffect(() => {
+		const checkGroupType = async () => {
+			try {
+				const { getSelectedGroup } = await import('../services/groupService')
+				const group = await getSelectedGroup()
+				setIsTeacher(group?.type === 'teacher')
+			} catch (error) {
+				console.error('Error checking group type:', error)
+			}
+		}
+		checkGroupType()
+	}, [nickname]) // Re-check when nickname changes (which happens when group changes)
 
 	// Handle scroll for header effects
 	useEffect(() => {
@@ -61,7 +76,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 						{dateStr}
 					</span>
 					<h1 className="text-xl font-display font-bold text-main">
-						{nickname === 'Student' ? 'Dzień dobry' : `Cześć, ${nickname}`}
+						{nickname === 'Student' || isTeacher ? 'Dzień dobry' : `Cześć, ${nickname}`}
 					</h1>
 				</div>
 
@@ -87,7 +102,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 				className="relative z-10 px-5 max-w-lg mx-auto md:max-w-2xl"
 				style={{
 					paddingTop: 'calc(7rem + env(safe-area-inset-top))',
-					paddingBottom: 'calc(9rem + env(safe-area-inset-bottom))',
+					paddingBottom: 'calc(6rem + env(safe-area-inset-bottom))',
 				}}>
 				{children}
 			</main>

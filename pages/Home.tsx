@@ -194,11 +194,12 @@ const Home: React.FC = () => {
 			}
 		})
 
+		// If all classes finished, show the "end of day" card (last index + 1)
 		if (
 			now > getMinutesFromMidnight(todaysEvents[todaysEvents.length - 1]?.endTime || '00:00') &&
 			todaysEvents.length > 0
 		) {
-			calculatedIdx = todaysEvents.length - 1
+			calculatedIdx = todaysEvents.length // Point to the end card
 			setProgress(100)
 		}
 
@@ -391,43 +392,6 @@ const Home: React.FC = () => {
 	// Format selected date for input value (YYYY-MM-DD)
 	const dateInputValue = selectedDate.toISOString().split('T')[0]
 
-	// Helper function to get next class info
-	const getNextClassInfo = () => {
-		if (!isTodayView || todaysEvents.length === 0) return null
-
-		const now = new Date()
-		const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
-
-		// Check if currently in a class
-		const currentClass = todaysEvents.find(evt => evt.startTime <= currentTime && evt.endTime > currentTime)
-		if (currentClass) return null // Don't show if in class
-
-		// Check for next class
-		const nextClass = todaysEvents.find(evt => evt.startTime > currentTime)
-		if (nextClass) {
-			// Calculate time until next class
-			const [nextHour, nextMin] = nextClass.startTime.split(':').map(Number)
-			const nextTime = new Date(now)
-			nextTime.setHours(nextHour, nextMin, 0)
-			const diffMs = nextTime.getTime() - now.getTime()
-			const diffMins = Math.floor(diffMs / 60000)
-			const diffHours = Math.floor(diffMins / 60)
-			const remainingMins = diffMins % 60
-
-			return {
-				event: nextClass,
-				minutesUntil: diffMins,
-				hoursUntil: diffHours,
-				remainingMinutes: remainingMins,
-			}
-		}
-
-		// All classes finished for today
-		return { finished: true }
-	}
-
-	const nextClassInfo = getNextClassInfo()
-
 	// Get time range for today's classes
 	const getClassTimeRange = () => {
 		if (todaysEvents.length === 0) return null
@@ -444,9 +408,7 @@ const Home: React.FC = () => {
 		<div className="space-y-6 animate-fade-in relative">
 			{/* --- Header --- */}
 			<div className="px-1 flex items-start justify-between">
-				<div
-					className={`transition-opacity duration-150 ${isTransitioning ? 'opacity-0' : 'opacity-100'}`}
-					key={`header-${selectedDate.toISOString()}`}>
+				<div>
 					<h2 className="text-3xl font-display font-bold text-primary tracking-tight">{getDayTitle()}</h2>
 					<span className="text-xs font-medium text-muted block mt-0.5">
 						{selectedDate.toLocaleDateString('pl-PL', { day: 'numeric', month: 'long' })}
@@ -454,42 +416,14 @@ const Home: React.FC = () => {
 				</div>
 				{/* Badge with class info or "Brak zajęć" */}
 				<div
-					className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all duration-150 ${
-						isTransitioning ? 'opacity-0' : 'opacity-100'
-					} ${
+					className={`px-3 py-1.5 rounded-full text-xs font-bold ${
 						timeRange
 							? 'bg-primary/10 text-primary border border-primary/20'
 							: 'bg-muted/10 text-muted border border-muted/20'
-					}`}
-					key={`badge-${selectedDate.toISOString()}`}>
+					}`}>
 					{timeRange ? `${timeRange.start} - ${timeRange.end}` : 'Brak zajęć'}
 				</div>
 			</div>
-
-			{/* Status Card - only show if today and no current class */}
-			{isTodayView && nextClassInfo && !isDemo && (
-				<section className="animate-fade-in">
-					{nextClassInfo.finished ? (
-						<div className="p-4 rounded-2xl bg-green-500/10 border border-green-500/20 mx-1 shadow-lg">
-							<div className="text-xs font-bold text-green-500 uppercase tracking-wide mb-1">Dzisiaj</div>
-							<div className="text-base font-bold text-main">Brak więcej zajęć</div>
-						</div>
-					) : nextClassInfo.event ? (
-						<div className="p-4 rounded-2xl bg-primary/10 border border-primary/20 mx-1 shadow-lg">
-							<div className="text-xs font-bold text-primary uppercase tracking-wide mb-1">
-								Następne zajęcia za{' '}
-								{nextClassInfo.hoursUntil > 0
-									? `${nextClassInfo.hoursUntil}h ${nextClassInfo.remainingMinutes}min`
-									: `${nextClassInfo.minutesUntil} min`}
-							</div>
-							<div className="text-base font-bold text-main mb-1">{nextClassInfo.event.subject}</div>
-							<div className="text-xs text-muted">
-								{nextClassInfo.event.startTime} - {nextClassInfo.event.endTime} • {nextClassInfo.event.room}
-							</div>
-						</div>
-					) : null}
-				</section>
-			)}
 
 			{/* --- Carousel --- */}
 			<section className="-mx-5 h-[280px] flex items-center">
@@ -497,19 +431,23 @@ const Home: React.FC = () => {
 					className={`w-full transition-opacity duration-150 ${isTransitioning ? 'opacity-0' : 'opacity-100'}`}
 					key={selectedDate.toISOString()}>
 					{isDemo ? (
-						<div className="flex flex-col items-center justify-center py-16 px-4 text-center border-2 border-dashed border-border rounded-3xl mx-6 bg-surface/30 w-full">
-							<h3 className="text-xl font-bold text-main mb-2">Nie masz jeszcze wybranej grupy</h3>
-							<p className="text-sm text-muted mb-6 max-w-[280px]">
+						<div className="flex flex-col items-center justify-center py-16 px-4 text-center border-2 border-dashed border-border rounded-3xl mx-6 bg-surface/30 w-full relative overflow-hidden">
+							{/* Decorative quarter circles */}
+							<div className="absolute top-0 right-0 w-24 h-24 rounded-full -mr-12 -mt-12 pointer-events-none opacity-5 bg-primary"></div>
+							<div className="absolute bottom-0 left-0 w-24 h-24 rounded-full -ml-12 -mb-12 pointer-events-none opacity-5 bg-primary"></div>
+
+							<h3 className="text-xl font-bold text-main mb-2 relative z-10">Nie masz jeszcze wybranej grupy</h3>
+							<p className="text-sm text-muted mb-6 max-w-[280px] relative z-10">
 								Wybierz swoją grupę zajęciową, aby zobaczyć plan zajęć i korzystać z pełni funkcji aplikacji.
 							</p>
 							<button
 								onClick={() => setIsGroupSelectorOpen(true)}
-								className="bg-primary text-black px-6 py-3 rounded-full font-bold text-sm shadow-lg hover:scale-105 transition-transform">
+								className="bg-primary text-black px-6 py-3 rounded-full font-bold text-sm shadow-lg hover:scale-105 transition-transform relative z-10">
 								Wybierz grupę
 							</button>
 						</div>
 					) : todaysEvents.length === 0 ? (
-						<div className="mx-6 w-full">
+						<div className="flex items-center justify-center w-full h-full">
 							<div className="text-center py-8">
 								<h3 className="text-lg font-bold text-main mb-1">Brak zajęć</h3>
 								<p className="text-sm text-muted mb-4">W tym dniu nie masz zaplanowanych zajęć</p>
@@ -572,12 +510,11 @@ const Home: React.FC = () => {
 													className={`bg-surface rounded-2xl p-5 border transition-all duration-300 flex flex-col relative overflow-hidden shadow-lg ${
 														isActive ? 'border-primary/20 shadow-2xl' : 'border-border/50 shadow-md'
 													}`}>
-													{/* Decorative quarter circle */}
+													{/* Decorative quarter circle - top right (filled) */}
 													<div
-														className={`absolute top-0 right-0 w-20 h-20 rounded-full -mr-10 -mt-10 pointer-events-none transition-opacity duration-300 ${
+														className={`absolute top-0 right-0 w-20 h-20 bg-primary rounded-full -mr-10 -mt-10 pointer-events-none transition-opacity duration-300 ${
 															isActive ? 'opacity-10' : 'opacity-5'
-														}`}
-														style={{ backgroundColor: 'var(--color-primary)' }}></div>
+														}`}></div>
 
 													{/* Status badge if today */}
 													{isTodayView && (
@@ -643,6 +580,40 @@ const Home: React.FC = () => {
 										</SwiperSlide>
 									)
 								})}
+
+								{/* End of Day Card - only show if today and all classes finished */}
+								{isTodayView &&
+									todaysEvents.length > 0 &&
+									minutesNow > getMinutesFromMidnight(todaysEvents[todaysEvents.length - 1]?.endTime || '00:00') && (
+										<SwiperSlide style={{ width: '78vw', maxWidth: '340px' }}>
+											<div className="w-full px-1 mb-2">
+												<div className="bg-surface rounded-2xl p-5 border border-green-500/20 transition-all duration-300 flex flex-col relative overflow-hidden shadow-lg">
+													{/* Decorative quarter circle */}
+													<div
+														className="absolute top-0 right-0 w-20 h-20 rounded-full -mr-10 -mt-10 pointer-events-none opacity-10"
+														style={{ backgroundColor: 'rgb(34, 197, 94)' }}></div>
+
+													{/* Status badge */}
+													<div className="mb-3">
+														<span className="inline-block px-2.5 py-1 rounded text-[10px] font-bold uppercase tracking-wide bg-green-500/10 text-green-500">
+															Koniec
+														</span>
+													</div>
+
+													{/* Message */}
+													<div className="flex-1 flex flex-col justify-center items-center text-center py-6">
+														<h3 className="text-xl font-display font-bold text-green-500 mb-2">Koniec zajęć na dziś</h3>
+														<p className="text-sm text-muted">Wszystkie zajęcia zostały zakończone</p>
+													</div>
+
+													{/* Time info */}
+													<div className="text-center text-xs text-muted mt-2">
+														Ostatnie zajęcia: {todaysEvents[todaysEvents.length - 1]?.endTime}
+													</div>
+												</div>
+											</div>
+										</SwiperSlide>
+									)}
 							</Swiper>
 
 							{/* Navigation Dots */}
@@ -658,6 +629,20 @@ const Home: React.FC = () => {
 											aria-label={`Przejdź do zajęć ${idx + 1}`}
 										/>
 									))}
+									{/* Extra dot for end card if visible */}
+									{isTodayView &&
+										todaysEvents.length > 0 &&
+										minutesNow > getMinutesFromMidnight(todaysEvents[todaysEvents.length - 1]?.endTime || '00:00') && (
+											<button
+												onClick={() => swiperRef.current?.slideTo(todaysEvents.length)}
+												className={`transition-all duration-300 rounded-full ${
+													activeIndex === todaysEvents.length
+														? 'w-8 h-2 bg-green-500'
+														: 'w-2 h-2 bg-slate-500/50 hover:bg-green-500/50'
+												}`}
+												aria-label="Koniec zajęć"
+											/>
+										)}
 								</div>
 							)}
 						</div>
@@ -717,13 +702,18 @@ const Home: React.FC = () => {
 						return (
 							<div
 								key={dl.id}
-								className={`shrink-0 w-32 aspect-square rounded-2xl p-3 flex flex-col justify-between border ${colorClass} relative group transition-transform active:scale-95`}>
-								<div className="flex justify-between items-start">
+								className={`shrink-0 w-32 aspect-square rounded-2xl p-3 flex flex-col justify-between border ${colorClass} relative group transition-transform active:scale-95 overflow-hidden`}>
+								{/* Decorative quarter circle */}
+								<div
+									className="absolute top-0 right-0 w-16 h-16 rounded-full -mr-8 -mt-8 pointer-events-none opacity-10"
+									style={{ backgroundColor: 'currentColor' }}></div>
+
+								<div className="flex justify-between items-start relative z-10">
 									<span className="text-[10px] font-bold uppercase opacity-70">
 										{new Date(dl.date).toLocaleDateString('pl-PL', { day: 'numeric', month: 'short' })}
 									</span>
 								</div>
-								<div>
+								<div className="relative z-10">
 									<h4 className="font-bold text-sm leading-tight line-clamp-2 mb-1">{dl.title}</h4>
 									<p className="text-[10px] font-medium opacity-80">{getDaysLeft(dl.date)}</p>
 								</div>
@@ -734,7 +724,7 @@ const Home: React.FC = () => {
 										e.stopPropagation()
 										initiateDeleteDeadline(dl.id)
 									}}
-									className="absolute bottom-2 right-2 p-2 text-current opacity-70 hover:opacity-100 hover:scale-110 transition-all rounded-full hover:bg-background/10">
+									className="absolute bottom-2 right-2 p-2 text-current opacity-70 hover:opacity-100 hover:scale-110 transition-all rounded-full hover:bg-background/10 z-10">
 									<Trash2 size={16} />
 								</button>
 							</div>
@@ -744,11 +734,14 @@ const Home: React.FC = () => {
 					{/* BIG ADD BUTTON */}
 					<button
 						onClick={() => setIsDeadlineModalOpen(true)}
-						className="shrink-0 w-32 aspect-square rounded-2xl bg-surface border-2 border-dashed border-border hover:border-primary/50 hover:bg-primary/5 flex flex-col items-center justify-center gap-2 text-muted hover:text-primary transition-all group">
-						<div className="w-10 h-10 rounded-full bg-background border border-border flex items-center justify-center group-hover:border-primary/50 group-hover:scale-110 transition-all">
+						className="shrink-0 w-32 aspect-square rounded-2xl bg-surface border-2 border-dashed border-border hover:border-primary/50 hover:bg-primary/5 flex flex-col items-center justify-center gap-2 text-muted hover:text-primary transition-all group relative overflow-hidden">
+						{/* Decorative quarter circle */}
+						{/* <div className="absolute top-0 right-0 w-16 h-16 rounded-full -mr-8 -mt-8 pointer-events-none opacity-5 bg-primary group-hover:opacity-10 transition-opacity"></div> */}
+
+						<div className="w-10 h-10 rounded-full bg-background border border-border flex items-center justify-center group-hover:border-primary/50 group-hover:scale-110 transition-all relative z-10">
 							<Plus size={20} />
 						</div>
-						<span className="text-xs font-bold">Dodaj</span>
+						<span className="text-xs font-bold relative z-10">Dodaj</span>
 					</button>
 				</div>
 			</section>
@@ -762,10 +755,16 @@ const Home: React.FC = () => {
 				<div className="grid grid-cols-2 gap-3">
 					<Link
 						to="/calculator"
-						className="bg-surface p-5 rounded-2xl border border-border hover:border-primary/30 hover:bg-hover transition-all group">
-						<Calculator size={24} className="text-orange-400 mb-3 group-hover:scale-110 transition-transform" />
-						<h4 className="text-main font-bold text-sm">Średnia</h4>
-						<p className="text-[11px] text-muted mt-1">Kalkulator ocen</p>
+						className="bg-surface p-5 rounded-2xl border border-border hover:border-primary/30 hover:bg-hover transition-all group relative overflow-hidden">
+						{/* Decorative quarter circle */}
+						<div className="absolute top-0 right-0 w-16 h-16 rounded-full -mr-8 -mt-8 pointer-events-none opacity-5 bg-orange-400 group-hover:opacity-10 transition-opacity"></div>
+
+						<Calculator
+							size={24}
+							className="text-orange-400 mb-3 group-hover:scale-110 transition-transform relative z-10"
+						/>
+						<h4 className="text-main font-bold text-sm relative z-10">Średnia</h4>
+						<p className="text-[11px] text-muted mt-1 relative z-10">Kalkulator ocen</p>
 					</Link>
 
 					{/* Academic Calendar - PDF Link */}
@@ -773,25 +772,31 @@ const Home: React.FC = () => {
 						href="https://studia.ubb.edu.pl/informacje-dla-studenta/harmonogram-studiow-2025-2026"
 						target="_blank"
 						rel="noopener noreferrer"
-						className="bg-surface p-5 rounded-2xl border border-border hover:border-primary/30 hover:bg-hover transition-all">
-						<CalendarRange size={24} className="text-blue-400 mb-3" />
-						<h4 className="text-main font-bold text-sm">Harmonogram</h4>
-						<p className="text-[11px] text-muted mt-1">Kalendarz (PDF)</p>
+						className="bg-surface p-5 rounded-2xl border border-border hover:border-primary/30 hover:bg-hover transition-all relative overflow-hidden group">
+						{/* Decorative quarter circle */}
+						<div className="absolute top-0 right-0 w-16 h-16 rounded-full -mr-8 -mt-8 pointer-events-none opacity-5 bg-blue-400 group-hover:opacity-10 transition-opacity"></div>
+
+						<CalendarRange size={24} className="text-blue-400 mb-3 relative z-10" />
+						<h4 className="text-main font-bold text-sm relative z-10">Harmonogram</h4>
+						<p className="text-[11px] text-muted mt-1 relative z-10">Kalendarz (PDF)</p>
 					</a>
 
 					<a
 						href="https://ubb.edu.pl/"
 						target="_blank"
 						rel="noopener noreferrer"
-						className="bg-surface p-5 rounded-2xl border border-border hover:border-primary/30 hover:bg-hover transition-all col-span-2 flex items-center justify-between">
-						<div className="flex items-center gap-4">
+						className="bg-surface p-5 rounded-2xl border border-border hover:border-primary/30 hover:bg-hover transition-all col-span-2 flex items-center justify-between relative overflow-hidden group">
+						{/* Decorative quarter circle */}
+						<div className="absolute top-0 right-0 w-20 h-20 rounded-full -mr-10 -mt-10 pointer-events-none opacity-5 bg-primary group-hover:opacity-10 transition-opacity"></div>
+
+						<div className="flex items-center gap-4 relative z-10">
 							<GraduationCap size={24} className="text-muted-green" />
 							<div>
 								<h4 className="text-main font-bold text-sm">Strona UBB</h4>
 								<p className="text-[11px] text-muted mt-0.5">ubb.edu.pl</p>
 							</div>
 						</div>
-						<ArrowRight size={16} className="text-muted" />
+						<ArrowRight size={16} className="text-muted relative z-10" />
 					</a>
 				</div>
 

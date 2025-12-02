@@ -64,6 +64,11 @@ const SettingsPage = () => {
 			const { getSelectedGroup } = await import('./services/groupService')
 			const group = await getSelectedGroup()
 			setGroupData(group)
+
+			// If teacher is selected, update nickname to teacher's name
+			if (group && group.type === 'teacher') {
+				setNickname(group.name)
+			}
 		}
 		loadGroup()
 	}, [])
@@ -72,6 +77,11 @@ const SettingsPage = () => {
 		const { getSelectedGroup } = await import('./services/groupService')
 		const group = await getSelectedGroup()
 		setGroupData(group)
+
+		// If teacher is selected, update nickname to teacher's name
+		if (group && group.type === 'teacher') {
+			setNickname(group.name)
+		}
 	}
 
 	const { currentTheme, setTheme, isDarkMode, toggleDarkMode, nickname, setNickname, avatarSeed, setAvatarSeed } =
@@ -171,7 +181,7 @@ const SettingsPage = () => {
 						</div>
 					)}
 
-					<div className="mt-4 flex items-center gap-2">
+					<div className="mt-4 flex flex-col items-center gap-2 w-full">
 						{isEditingName ? (
 							<div className="flex items-center gap-2 bg-background rounded-lg px-2 py-1 border border-primary/50">
 								<input
@@ -188,16 +198,23 @@ const SettingsPage = () => {
 						) : (
 							<h2
 								onClick={() => {
-									setTempName(nickname)
-									setIsEditingName(true)
+									// Only allow editing if not a teacher
+									if (groupData?.type !== 'teacher') {
+										setTempName(nickname)
+										setIsEditingName(true)
+									}
 								}}
-								className="text-xl font-bold text-main cursor-pointer hover:text-primary transition-colors flex items-center gap-2">
+								className={`text-xl font-bold text-main flex items-center gap-2 text-center ${
+									groupData?.type !== 'teacher' ? 'cursor-pointer hover:text-primary transition-colors' : ''
+								}`}>
 								{nickname}
-								<Edit3 size={14} className="text-muted opacity-50" />
+								{groupData?.type !== 'teacher' && <Edit3 size={14} className="text-muted opacity-50" />}
 							</h2>
 						)}
+						<p className="text-xs text-muted uppercase tracking-wide font-bold">
+							{groupData?.type === 'teacher' ? 'Prowadzący' : 'Student'}
+						</p>
 					</div>
-					<p className="text-xs text-muted uppercase tracking-wide font-bold mt-1">Student</p>
 				</div>
 			</section>
 
@@ -209,7 +226,9 @@ const SettingsPage = () => {
 						<div className="flex justify-between items-center">
 							<div>
 								<div className="text-main text-sm font-bold">{groupData.name}</div>
-								<div className="text-[10px] text-muted">{groupData.type === 'teacher' ? 'Wykładowca' : groupData.field}</div>
+								<div className="text-[10px] text-muted">
+									{groupData.type === 'teacher' ? 'Wykładowca' : groupData.field}
+								</div>
 							</div>
 							<button
 								onClick={() => setIsGroupSelectorOpen(true)}
@@ -360,8 +379,8 @@ const SettingsPage = () => {
 				Wyloguj
 			</button>
 
-			<div className="text-center space-y-4 pt-4 border-t border-border">
-				<div className="flex justify-center gap-4 text-[10px] text-muted font-bold tracking-wide uppercase">
+			<div className="text-center space-y-3 pt-4 pb-2 border-t border-border">
+				<div className="flex justify-center gap-3 text-xs text-muted font-bold tracking-wide uppercase">
 					<span>Wersja {appVersion}</span>
 					<span>•</span>
 					<span className="flex items-center gap-1">
@@ -376,17 +395,19 @@ const SettingsPage = () => {
 					</span>
 				</div>
 
-				<div className="space-y-1">
-					<p className="text-[10px] text-muted">Dane planu są własnością Uniwersytetu Bielsko-Bialskiego.</p>
-					<div className="text-[10px] text-muted font-medium pt-1 space-y-0.5">
-						<p>
-							Aplikacja: <span className="text-main font-bold">Mateusz Gałuszka</span>
-						</p>
-						<p>
-							Pobieranie danych (Scraper): <span className="text-main font-bold">Jakub Gałosz</span>
-						</p>
+				<div className="space-y-2">
+					<p className="text-xs text-muted">Dane planu są własnością Uniwersytetu Bielsko-Bialskiego.</p>
+
+					<div className="text-xs text-muted font-medium">
+						<p className="mb-1">Twórcy aplikacji:</p>
+						<div className="flex items-center justify-center gap-2">
+							<span className="text-main font-bold">Mateusz Gałuszka</span>
+							<span className="text-muted/50">•</span>
+							<span className="text-main font-bold">Jakub Gałosz</span>
+						</div>
 					</div>
-					<p className="text-[9px] text-muted/50 pt-2">Assets: DiceBear (Avatars), Unsplash, Lucide Icons</p>
+
+					<p className="text-[10px] text-muted/50 pt-1">Assets: DiceBear, Unsplash, Lucide Icons</p>
 				</div>
 			</div>
 
