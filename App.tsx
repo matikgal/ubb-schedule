@@ -6,6 +6,7 @@ import SearchPage from './pages/Search'
 import SchedulePage from './pages/Schedule'
 import CalculatorPage from './pages/Calculator'
 import Preloader from './components/Preloader'
+import GroupSelectorModal from './components/GroupSelectorModal'
 import {
 	Shield,
 	LogOut,
@@ -56,6 +57,7 @@ const PrivacyPage = () => {
 
 const SettingsPage = () => {
 	const [groupData, setGroupData] = useState<any>(null)
+	const [isGroupSelectorOpen, setIsGroupSelectorOpen] = useState(false)
 
 	useEffect(() => {
 		const loadGroup = async () => {
@@ -65,6 +67,12 @@ const SettingsPage = () => {
 		}
 		loadGroup()
 	}, [])
+
+	const handleGroupSelected = async () => {
+		const { getSelectedGroup } = await import('./services/groupService')
+		const group = await getSelectedGroup()
+		setGroupData(group)
+	}
 
 	const { currentTheme, setTheme, isDarkMode, toggleDarkMode, nickname, setNickname, avatarSeed, setAvatarSeed } =
 		useTheme()
@@ -204,7 +212,7 @@ const SettingsPage = () => {
 								<div className="text-[10px] text-muted">{groupData.field}</div>
 							</div>
 							<button
-								onClick={() => navigate('/search')}
+								onClick={() => setIsGroupSelectorOpen(true)}
 								className="text-[10px] font-bold text-primary bg-primary/10 px-3 py-1.5 rounded-full hover:bg-primary/20 transition-colors">
 								ZMIEŃ
 							</button>
@@ -212,7 +220,7 @@ const SettingsPage = () => {
 					) : (
 						<div className="flex justify-between items-center text-muted text-sm">
 							<span>Nie wybrano grupy.</span>
-							<button onClick={() => navigate('/search')} className="text-primary text-xs font-bold">
+							<button onClick={() => setIsGroupSelectorOpen(true)} className="text-primary text-xs font-bold">
 								Wybierz
 							</button>
 						</div>
@@ -381,6 +389,13 @@ const SettingsPage = () => {
 					<p className="text-[9px] text-muted/50 pt-2">Assets: DiceBear (Avatars), Unsplash, Lucide Icons</p>
 				</div>
 			</div>
+
+			{/* Group Selector Modal */}
+			<GroupSelectorModal
+				isOpen={isGroupSelectorOpen}
+				onClose={() => setIsGroupSelectorOpen(false)}
+				onGroupSelected={handleGroupSelected}
+			/>
 		</div>
 	)
 }

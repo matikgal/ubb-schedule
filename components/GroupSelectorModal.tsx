@@ -113,6 +113,11 @@ const GroupSelectorModal: React.FC<GroupSelectorModalProps> = ({ isOpen, onClose
 		setSelectedGroup(group)
 		try {
 			await saveSelectedGroup(group)
+
+			// Force refresh schedule data for the new group
+			const { fetchScheduleForWeek } = await import('../services/scheduleService')
+			await fetchScheduleForWeek(group.id, undefined, true)
+
 			onGroupSelected()
 			onClose()
 		} catch (err) {
@@ -160,8 +165,9 @@ const GroupSelectorModal: React.FC<GroupSelectorModalProps> = ({ isOpen, onClose
 			<div
 				className="bg-surface border border-border rounded-3xl w-full max-w-md animate-slide-up flex flex-col pointer-events-auto"
 				style={{
-					maxHeight: '100%',
-					height: 'auto',
+					height: '70vh',
+					maxHeight: '600px',
+					minHeight: '400px',
 					boxShadow: '0 0 0 9999px rgba(0, 0, 0, 0.4)',
 				}}>
 				{/* Header */}

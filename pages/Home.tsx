@@ -78,7 +78,12 @@ const Home: React.FC = () => {
 	const [confirmDialog, setConfirmDialog] = useState<ConfirmState>({ isOpen: false, title: '', message: '' })
 	const [isGroupSelectorOpen, setIsGroupSelectorOpen] = useState(false)
 
-	// --- Load Initial Data ---
+	// Cache all events to avoid re-fetching
+	const [allEventsCache, setAllEventsCache] = useState<ClassEvent[]>([])
+	const [isLoadingSchedule, setIsLoadingSchedule] = useState(true)
+	const [isTransitioning, setIsTransitioning] = useState(false)
+
+	// --- Load Initial Data (only once) ---
 	useEffect(() => {
 		const loadScheduleData = async () => {
 			const selectedGroup = await getSelectedGroup()
@@ -86,42 +91,27 @@ const Home: React.FC = () => {
 			if (!selectedGroup) {
 				setIsDemo(true)
 				setTodaysEvents([])
+				setIsLoadingSchedule(false)
 				return
 			}
 
 			setIsDemo(false)
 
 			try {
-				// Pobierz wszystkie zajęcia dla grupy
+				// Pobierz wszystkie zajęcia dla grupy (tylko raz)
 				const allEvents = await fetchScheduleForWeek(selectedGroup.id)
-
-				// Calculate API Day (1=Mon ... 7=Sun) based on selectedDate
-				const dayIndex = selectedDate.getDay()
-				const apiDay = dayIndex === 0 ? 7 : dayIndex
-
-				// Filtruj zajęcia dla wybranego dnia
-				const eventsToProcess = allEvents.filter(e => e.dayOfWeek === apiDay)
-
-				const sortedEvents = eventsToProcess.sort(
-					(a, b) => getMinutesFromMidnight(a.startTime) - getMinutesFromMidnight(b.startTime)
-				)
-
-				setTodaysEvents(sortedEvents)
-
-				// Reset progress if changing days
-				if (!isSameDay(selectedDate, new Date())) {
-					setProgress(0)
-					setActiveIndex(0)
-				}
+				setAllEventsCache(allEvents)
+				setIsLoadingSchedule(false)
 			} catch (error) {
 				console.error('Error loading schedule:', error)
-				setTodaysEvents([])
+				setAllEventsCache([])
+				setIsLoadingSchedule(false)
 			}
 		}
 
 		loadScheduleData()
 
-		// Load Deadlines & Archive
+		// Load Deadlines & Archive (only once)
 		const savedDeadlines = JSON.parse(localStorage.getItem('user-deadlines') || '[]')
 		const savedArchive = JSON.parse(localStorage.getItem('user-deadlines-archive') || '[]')
 
@@ -154,7 +144,66 @@ const Home: React.FC = () => {
 			setDeadlines(savedDeadlines)
 			setArchivedDeadlines(savedArchive)
 		}
-	}, [isDemo, selectedDate])
+	}, []) // Load only once on mount
+
+	// --- Filter events for selected date ---
+	useEffect(() => {
+		if (isLoadingSchedule || allEventsCache.length === 0) {
+			setTodaysEvents([])
+			return
+		}
+
+		// Calculate API Day (1=Mon ... 7=Sun) based on selectedDate
+		const dayIndex = selectedDate.getDay()
+		const apiDay = dayIndex === 0 ? 7 : dayIndex
+
+		// Filtruj zajęcia dla wybranego dnia z cache
+		const eventsToProcess = allEventsCache.filter(e => e.dayOfWeek === apiDay)
+
+		const sortedEvents = eventsToProcess.sort(
+			(a, b) => getMinutesFromMidnight(a.startTime) - getMinutesFromMidnight(b.startTime)
+		)
+
+		setTodaysEvents(sortedEvents)
+
+		// Reset progress if changing days
+		if (!isSameDay(selectedDate, new Date())) {
+			setProgress(0)
+			setActiveIndex(0)
+		}
+	}, [selectedDate, allEventsCache, isLoadingSchedule])
+
+	// Calculate current class index immediately
+	const calculateCurrentClass = () => {
+		const now = getCurrentTimeMinutes()
+		let calculatedIdx = 0
+		let foundActive = false
+
+		todaysEvents.forEach((evt, idx) => {
+			const start = getMinutesFromMidnight(evt.startTime)
+			const end = getMinutesFromMidnight(evt.endTime)
+
+			if (now >= start && now < end) {
+				calculatedIdx = idx
+				foundActive = true
+				const totalDuration = end - start
+				const elapsed = now - start
+				setProgress((elapsed / totalDuration) * 100)
+			} else if (now < start && !foundActive) {
+				if (!foundActive) calculatedIdx = idx
+			}
+		})
+
+		if (
+			now > getMinutesFromMidnight(todaysEvents[todaysEvents.length - 1]?.endTime || '00:00') &&
+			todaysEvents.length > 0
+		) {
+			calculatedIdx = todaysEvents.length - 1
+			setProgress(100)
+		}
+
+		return calculatedIdx
+	}
 
 	// --- Timer & Progress Logic ---
 	useEffect(() => {
@@ -163,74 +212,61 @@ const Home: React.FC = () => {
 
 		if (!isToday) {
 			setMinutesNow(0) // Reset or stop updating
+			setCurrentClassIndex(0)
+			return
+		}
+
+		if (todaysEvents.length === 0) {
 			return
 		}
 
 		// Immediate update on mount
 		setMinutesNow(getCurrentTimeMinutes())
+		const initialIdx = calculateCurrentClass()
+		setCurrentClassIndex(initialIdx)
 
 		const interval = setInterval(() => {
 			const now = getCurrentTimeMinutes()
 			setMinutesNow(now)
-
-			let calculatedIdx = 0
-			let foundActive = false
-
-			todaysEvents.forEach((evt, idx) => {
-				const start = getMinutesFromMidnight(evt.startTime)
-				const end = getMinutesFromMidnight(evt.endTime)
-
-				if (now >= start && now < end) {
-					calculatedIdx = idx
-					foundActive = true
-					const totalDuration = end - start
-					const elapsed = now - start
-					setProgress((elapsed / totalDuration) * 100)
-				} else if (now < start && !foundActive) {
-					if (!foundActive) calculatedIdx = idx
-				}
-			})
-
-			if (
-				now > getMinutesFromMidnight(todaysEvents[todaysEvents.length - 1]?.endTime || '00:00') &&
-				todaysEvents.length > 0
-			) {
-				calculatedIdx = todaysEvents.length - 1
-				setProgress(100)
-			}
-
-			// Update the current class index (for badge display) but don't force carousel movement
+			const calculatedIdx = calculateCurrentClass()
 			setCurrentClassIndex(calculatedIdx)
 		}, 1000 * 30)
 
 		return () => clearInterval(interval)
 	}, [todaysEvents, selectedDate])
 
-	// Initial slide positioning only
+	// Initial slide positioning - immediate, no delay
 	useEffect(() => {
-		if (swiperRef.current && todaysEvents.length > 0) {
+		if (swiperRef.current && todaysEvents.length > 0 && !isLoadingSchedule && !isTransitioning) {
 			// Only scroll to active on initial load or date change
 			const isToday = isSameDay(selectedDate, new Date())
 			const targetIndex = isToday ? currentClassIndex : 0
 
-			setTimeout(() => {
-				swiperRef.current?.slideTo(targetIndex, 0) // 0 = no animation on initial load
-				setActiveIndex(targetIndex) // Sync activeIndex with initial position
-			}, 100)
+			// Immediate positioning without animation
+			swiperRef.current?.slideTo(targetIndex, 0)
+			setActiveIndex(targetIndex)
 		}
-	}, [todaysEvents.length, selectedDate, currentClassIndex])
+	}, [todaysEvents.length, selectedDate, currentClassIndex, isLoadingSchedule, isTransitioning])
 
 	// --- Handlers ---
 
 	const handleDayChange = (offset: number) => {
-		const newDate = new Date(selectedDate)
-		newDate.setDate(selectedDate.getDate() + offset)
-		setSelectedDate(newDate)
+		setIsTransitioning(true)
+		setTimeout(() => {
+			const newDate = new Date(selectedDate)
+			newDate.setDate(selectedDate.getDate() + offset)
+			setSelectedDate(newDate)
+			setTimeout(() => setIsTransitioning(false), 50)
+		}, 150)
 	}
 
 	const handleDateSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
 		if (e.target.value) {
-			setSelectedDate(new Date(e.target.value))
+			setIsTransitioning(true)
+			setTimeout(() => {
+				setSelectedDate(new Date(e.target.value))
+				setTimeout(() => setIsTransitioning(false), 50)
+			}, 150)
 		}
 	}
 
@@ -249,13 +285,6 @@ const Home: React.FC = () => {
 	}
 
 	const getDayTitle = () => {
-		const today = new Date()
-		const tomorrow = new Date()
-		tomorrow.setDate(today.getDate() + 1)
-
-		if (isSameDay(selectedDate, today)) return 'Dziś'
-		if (isSameDay(selectedDate, tomorrow)) return 'Jutro'
-
 		const dayIndex = selectedDate.getDay()
 		const apiDay = dayIndex === 0 ? 7 : dayIndex
 		return getDayName(apiDay)
@@ -399,66 +428,6 @@ const Home: React.FC = () => {
 
 	const nextClassInfo = getNextClassInfo()
 
-	// State for next future class (when today has no classes)
-	const [nextFutureClass, setNextFutureClass] = useState<any>(null)
-
-	// Find next class from future days when today has no classes
-	useEffect(() => {
-		const findNextFutureClass = async () => {
-			if (!isTodayView || todaysEvents.length > 0 || isDemo) {
-				setNextFutureClass(null)
-				return
-			}
-
-			try {
-				const selectedGroup = await getSelectedGroup()
-				if (!selectedGroup) return
-
-				const allEvents = await fetchScheduleForWeek(selectedGroup.id)
-				const now = new Date()
-
-				// Check next 7 days
-				for (let dayOffset = 1; dayOffset <= 7; dayOffset++) {
-					const checkDate = new Date(now)
-					checkDate.setDate(now.getDate() + dayOffset)
-					const checkDayIndex = checkDate.getDay()
-					const apiDay = checkDayIndex === 0 ? 7 : checkDayIndex
-
-					const dayEvents = allEvents
-						.filter(e => e.dayOfWeek === apiDay)
-						.sort((a, b) => a.startTime.localeCompare(b.startTime))
-
-					if (dayEvents.length > 0) {
-						const firstClass = dayEvents[0]
-						const [eventHour, eventMin] = firstClass.startTime.split(':').map(Number)
-						const eventDate = new Date(checkDate)
-						eventDate.setHours(eventHour, eventMin, 0, 0)
-
-						const diffMs = eventDate.getTime() - now.getTime()
-						const diffMins = Math.floor(diffMs / 60000)
-						const diffHours = Math.floor(diffMins / 60)
-						const diffDays = Math.floor(diffHours / 24)
-						const remainingHours = diffHours % 24
-						const remainingMins = diffMins % 60
-
-						setNextFutureClass({
-							event: firstClass,
-							dayName: getDayName(apiDay),
-							daysUntil: diffDays,
-							hoursUntil: remainingHours,
-							minutesUntil: remainingMins,
-						})
-						return
-					}
-				}
-			} catch (error) {
-				console.error('Error finding next class:', error)
-			}
-		}
-
-		findNextFutureClass()
-	}, [isTodayView, todaysEvents.length, isDemo])
-
 	// Get time range for today's classes
 	const getClassTimeRange = () => {
 		if (todaysEvents.length === 0) return null
@@ -475,7 +444,9 @@ const Home: React.FC = () => {
 		<div className="space-y-6 animate-fade-in relative">
 			{/* --- Header --- */}
 			<div className="px-1 flex items-start justify-between">
-				<div>
+				<div
+					className={`transition-opacity duration-150 ${isTransitioning ? 'opacity-0' : 'opacity-100'}`}
+					key={`header-${selectedDate.toISOString()}`}>
 					<h2 className="text-3xl font-display font-bold text-primary tracking-tight">{getDayTitle()}</h2>
 					<span className="text-xs font-medium text-muted block mt-0.5">
 						{selectedDate.toLocaleDateString('pl-PL', { day: 'numeric', month: 'long' })}
@@ -483,11 +454,14 @@ const Home: React.FC = () => {
 				</div>
 				{/* Badge with class info or "Brak zajęć" */}
 				<div
-					className={`px-3 py-1.5 rounded-full text-xs font-bold ${
+					className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all duration-150 ${
+						isTransitioning ? 'opacity-0' : 'opacity-100'
+					} ${
 						timeRange
 							? 'bg-primary/10 text-primary border border-primary/20'
 							: 'bg-muted/10 text-muted border border-muted/20'
-					}`}>
+					}`}
+					key={`badge-${selectedDate.toISOString()}`}>
 					{timeRange ? `${timeRange.start} - ${timeRange.end}` : 'Brak zajęć'}
 				</div>
 			</div>
@@ -518,80 +492,24 @@ const Home: React.FC = () => {
 			)}
 
 			{/* --- Carousel --- */}
-			<section className="-mx-5 min-h-[240px] flex items-center">
-				{isDemo ? (
-					<div className="flex flex-col items-center justify-center py-16 px-4 text-center border-2 border-dashed border-border rounded-3xl mx-6 bg-surface/30 w-full">
-						<h3 className="text-xl font-bold text-main mb-2">Nie masz jeszcze wybranej grupy</h3>
-						<p className="text-sm text-muted mb-6 max-w-[280px]">
-							Wybierz swoją grupę zajęciową, aby zobaczyć plan zajęć i korzystać z pełni funkcji aplikacji.
-						</p>
-						<button
-							onClick={() => setIsGroupSelectorOpen(true)}
-							className="bg-primary text-black px-6 py-3 rounded-full font-bold text-sm shadow-lg hover:scale-105 transition-transform">
-							Wybierz grupę
-						</button>
-					</div>
-				) : todaysEvents.length === 0 ? (
-					<div className="mx-6 w-full">
-						{/* Show next class countdown only for today */}
-						{isTodayView && nextFutureClass ? (
-							<div className="bg-surface border border-border rounded-2xl p-4 shadow-lg max-w-md mx-auto">
-								<div className="flex gap-4">
-									{/* Left side - Circular progress (20%) */}
-									<div className="flex-shrink-0 w-20 h-20 relative">
-										<svg className="w-20 h-20 transform -rotate-90" viewBox="0 0 80 80">
-											{/* Background circle */}
-											<circle
-												cx="40"
-												cy="40"
-												r="32"
-												stroke="currentColor"
-												strokeWidth="6"
-												fill="none"
-												className="text-border opacity-20"
-											/>
-											{/* Progress circle - 85% */}
-											<circle
-												cx="40"
-												cy="40"
-												r="32"
-												stroke="currentColor"
-												strokeWidth="6"
-												fill="none"
-												strokeDasharray={`${2 * Math.PI * 32 * 0.85} ${2 * Math.PI * 32}`}
-												className="text-primary transition-all duration-1000"
-												strokeLinecap="round"
-											/>
-										</svg>
-										{/* Time in center */}
-										<div className="absolute inset-0 flex flex-col items-center justify-center">
-											<span className="text-lg font-bold text-primary leading-none">{nextFutureClass.hoursUntil}</span>
-											<span className="text-[9px] text-muted uppercase">godz</span>
-										</div>
-									</div>
-
-									{/* Right side - Details (80%) */}
-									<div className="flex-1 min-w-0">
-										<div className="text-[10px] font-bold text-muted uppercase tracking-wide mb-1">
-											Następne zajęcia • {nextFutureClass.dayName}
-										</div>
-										<h3 className="text-base font-bold text-main mb-2 line-clamp-1">{nextFutureClass.event.subject}</h3>
-										<div className="space-y-1">
-											<div className="flex items-center gap-2 text-xs text-muted">
-												<Clock size={11} className="flex-shrink-0" />
-												<span>
-													{nextFutureClass.event.startTime} - {nextFutureClass.event.endTime}
-												</span>
-											</div>
-											<div className="flex items-center gap-2 text-xs text-muted">
-												<MapPin size={11} className="flex-shrink-0" />
-												<span className="line-clamp-1">{nextFutureClass.event.room}</span>
-											</div>
-										</div>
-									</div>
-								</div>
-							</div>
-						) : (
+			<section className="-mx-5 h-[280px] flex items-center">
+				<div
+					className={`w-full transition-opacity duration-150 ${isTransitioning ? 'opacity-0' : 'opacity-100'}`}
+					key={selectedDate.toISOString()}>
+					{isDemo ? (
+						<div className="flex flex-col items-center justify-center py-16 px-4 text-center border-2 border-dashed border-border rounded-3xl mx-6 bg-surface/30 w-full">
+							<h3 className="text-xl font-bold text-main mb-2">Nie masz jeszcze wybranej grupy</h3>
+							<p className="text-sm text-muted mb-6 max-w-[280px]">
+								Wybierz swoją grupę zajęciową, aby zobaczyć plan zajęć i korzystać z pełni funkcji aplikacji.
+							</p>
+							<button
+								onClick={() => setIsGroupSelectorOpen(true)}
+								className="bg-primary text-black px-6 py-3 rounded-full font-bold text-sm shadow-lg hover:scale-105 transition-transform">
+								Wybierz grupę
+							</button>
+						</div>
+					) : todaysEvents.length === 0 ? (
+						<div className="mx-6 w-full">
 							<div className="text-center py-8">
 								<h3 className="text-lg font-bold text-main mb-1">Brak zajęć</h3>
 								<p className="text-sm text-muted mb-4">W tym dniu nie masz zaplanowanych zajęć</p>
@@ -603,137 +521,148 @@ const Home: React.FC = () => {
 									</button>
 								)}
 							</div>
-						)}
-					</div>
-				) : (
-					<div className="relative w-full">
-						<Swiper
-							onSwiper={swiper => (swiperRef.current = swiper)}
-							effect="coverflow"
-							grabCursor={true}
-							centeredSlides={true}
-							slidesPerView="auto"
-							spaceBetween={0}
-							coverflowEffect={{
-								rotate: 0,
-								stretch: -20,
-								depth: 120,
-								modifier: 1,
-								slideShadows: false,
-							}}
-							speed={400}
-							touchRatio={1}
-							threshold={10}
-							longSwipesRatio={0.3}
-							modules={[EffectCoverflow]}
-							className="pb-8"
-							initialSlide={isTodayView ? activeIndex : 0}
-							onSlideChange={swiper => setActiveIndex(swiper.activeIndex)}>
-							{todaysEvents.map((evt, idx) => {
-								// Logic: If looking at today, calculate active. If looking at another day, show all as standard.
-								const isActive = idx === activeIndex
-								const isCurrentClass = isTodayView && idx === currentClassIndex
-								const isPast = isTodayView && idx < currentClassIndex
-								const endTimeMins = getMinutesFromMidnight(evt.endTime)
-								const minutesLeft = endTimeMins - minutesNow
+						</div>
+					) : (
+						<div className="relative w-full">
+							<Swiper
+								onSwiper={swiper => {
+									swiperRef.current = swiper
+									// Set initial position immediately
+									const isToday = isSameDay(selectedDate, new Date())
+									const targetIndex = isToday ? currentClassIndex : 0
+									if (targetIndex > 0) {
+										setTimeout(() => {
+											swiper.slideTo(targetIndex, 0)
+											setActiveIndex(targetIndex)
+										}, 0)
+									}
+								}}
+								effect="coverflow"
+								grabCursor={true}
+								centeredSlides={true}
+								slidesPerView="auto"
+								spaceBetween={0}
+								coverflowEffect={{
+									rotate: 0,
+									stretch: -20,
+									depth: 120,
+									modifier: 1,
+									slideShadows: false,
+								}}
+								speed={400}
+								touchRatio={1}
+								threshold={10}
+								longSwipesRatio={0.3}
+								modules={[EffectCoverflow]}
+								className="pb-8"
+								initialSlide={isSameDay(selectedDate, new Date()) ? currentClassIndex : 0}
+								onSlideChange={swiper => setActiveIndex(swiper.activeIndex)}>
+								{todaysEvents.map((evt, idx) => {
+									// Logic: If looking at today, calculate active. If looking at another day, show all as standard.
+									const isActive = idx === activeIndex
+									const isCurrentClass = isTodayView && idx === currentClassIndex
+									const isPast = isTodayView && idx < currentClassIndex
+									const endTimeMins = getMinutesFromMidnight(evt.endTime)
+									const minutesLeft = endTimeMins - minutesNow
 
-								return (
-									<SwiperSlide key={evt.id} style={{ width: '78vw', maxWidth: '340px' }}>
-										<div className="w-full px-1 mb-2">
-											<div
-												className={`bg-surface rounded-2xl p-5 border transition-all duration-300 flex flex-col relative overflow-hidden shadow-lg ${
-													isActive ? 'border-primary/20 shadow-2xl' : 'border-border/50 shadow-md'
-												}`}>
-												{/* Decorative quarter circle */}
+									return (
+										<SwiperSlide key={evt.id} style={{ width: '78vw', maxWidth: '340px' }}>
+											<div className="w-full px-1 mb-2">
 												<div
-													className={`absolute top-0 right-0 w-20 h-20 rounded-full -mr-10 -mt-10 pointer-events-none transition-opacity duration-300 ${
-														isActive ? 'opacity-10' : 'opacity-5'
-													}`}
-													style={{ backgroundColor: 'var(--color-primary)' }}></div>
+													className={`bg-surface rounded-2xl p-5 border transition-all duration-300 flex flex-col relative overflow-hidden shadow-lg ${
+														isActive ? 'border-primary/20 shadow-2xl' : 'border-border/50 shadow-md'
+													}`}>
+													{/* Decorative quarter circle */}
+													<div
+														className={`absolute top-0 right-0 w-20 h-20 rounded-full -mr-10 -mt-10 pointer-events-none transition-opacity duration-300 ${
+															isActive ? 'opacity-10' : 'opacity-5'
+														}`}
+														style={{ backgroundColor: 'var(--color-primary)' }}></div>
 
-												{/* Status badge if today */}
-												{isTodayView && (
-													<div className="mb-3">
-														<span
-															className={`inline-block px-2.5 py-1 rounded text-[10px] font-bold uppercase tracking-wide ${
-																isCurrentClass ? 'bg-primary text-black' : 'bg-slate-500/10 text-muted'
-															}`}>
-															{isCurrentClass ? 'Teraz' : isPast ? 'Koniec' : 'Wkrótce'}
-														</span>
-													</div>
-												)}
-
-												{/* Subject title and type on same line */}
-												<div className="flex items-start gap-2 mb-3">
-													<h3
-														className={`text-lg font-display font-bold leading-tight flex-1 ${
-															isActive ? 'text-primary' : 'text-main'
-														}`}>
-														{evt.subject}
-													</h3>
-													<span
-														className={`text-[10px] font-bold border border-border px-2 py-1 rounded-md uppercase tracking-wide flex-shrink-0 ${
-															isActive ? 'text-main bg-background/50' : 'text-muted'
-														}`}>
-														{evt.type}
-													</span>
-												</div>
-
-												{/* Details */}
-												<div className="flex flex-col gap-1.5 text-sm text-muted mb-4">
-													<div className="flex items-center gap-2">
-														<MapPin size={13} className="opacity-70 flex-shrink-0" />
-														<span className="text-xs">{evt.room}</span>
-													</div>
-													<div className="flex items-center gap-2">
-														<User size={13} className="opacity-70 flex-shrink-0" />
-														<span className="text-xs opacity-80 line-clamp-1">{evt.teacher}</span>
-													</div>
-												</div>
-
-												{/* Time display */}
-												<div className="flex justify-between items-center text-xs font-medium text-muted mb-2">
-													<span>{evt.startTime}</span>
-													{isCurrentClass && minutesLeft > 0 && (
-														<span className="text-primary font-bold animate-pulse text-[10px] bg-primary/10 px-2 py-0.5 rounded-full">
-															{minutesLeft} min
-														</span>
+													{/* Status badge if today */}
+													{isTodayView && (
+														<div className="mb-3">
+															<span
+																className={`inline-block px-2.5 py-1 rounded text-[10px] font-bold uppercase tracking-wide ${
+																	isCurrentClass ? 'bg-primary text-black' : 'bg-slate-500/10 text-muted'
+																}`}>
+																{isCurrentClass ? 'Teraz' : isPast ? 'Koniec' : 'Wkrótce'}
+															</span>
+														</div>
 													)}
-													<span>{evt.endTime}</span>
-												</div>
 
-												{/* Progress Bar - only show when class is currently happening */}
-												{isCurrentClass && (
-													<div className="h-1 w-full bg-slate-500/10 rounded-full overflow-hidden">
-														<div
-															className="h-full bg-primary transition-all duration-1000 ease-linear"
-															style={{ width: `${progress}%` }}></div>
+													{/* Subject title and type on same line */}
+													<div className="flex items-start gap-2 mb-3">
+														<h3
+															className={`text-lg font-display font-bold leading-tight flex-1 ${
+																isActive ? 'text-primary' : 'text-main'
+															}`}>
+															{evt.subject}
+														</h3>
+														<span
+															className={`text-[10px] font-bold border border-border px-2 py-1 rounded-md uppercase tracking-wide flex-shrink-0 ${
+																isActive ? 'text-main bg-background/50' : 'text-muted'
+															}`}>
+															{evt.type}
+														</span>
 													</div>
-												)}
-											</div>
-										</div>
-									</SwiperSlide>
-								)
-							})}
-						</Swiper>
 
-						{/* Navigation Dots */}
-						{todaysEvents.length > 1 && (
-							<div className="flex justify-center gap-2 mt-4">
-								{todaysEvents.map((_, idx) => (
-									<button
-										key={idx}
-										onClick={() => swiperRef.current?.slideTo(idx)}
-										className={`transition-all duration-300 rounded-full ${
-											idx === activeIndex ? 'w-8 h-2 bg-primary' : 'w-2 h-2 bg-slate-500/50 hover:bg-primary/50'
-										}`}
-										aria-label={`Przejdź do zajęć ${idx + 1}`}
-									/>
-								))}
-							</div>
-						)}
-					</div>
-				)}
+													{/* Details */}
+													<div className="flex flex-col gap-1.5 text-sm text-muted mb-4">
+														<div className="flex items-center gap-2">
+															<MapPin size={13} className="opacity-70 flex-shrink-0" />
+															<span className="text-xs">{evt.room}</span>
+														</div>
+														<div className="flex items-center gap-2">
+															<User size={13} className="opacity-70 flex-shrink-0" />
+															<span className="text-xs opacity-80 line-clamp-1">{evt.teacher}</span>
+														</div>
+													</div>
+
+													{/* Time display */}
+													<div className="flex justify-between items-center text-xs font-medium text-muted mb-2">
+														<span>{evt.startTime}</span>
+														{isCurrentClass && minutesLeft > 0 && (
+															<span className="text-primary font-bold animate-pulse text-[10px] bg-primary/10 px-2 py-0.5 rounded-full">
+																{minutesLeft} min
+															</span>
+														)}
+														<span>{evt.endTime}</span>
+													</div>
+
+													{/* Progress Bar - only show when class is currently happening */}
+													{isCurrentClass && (
+														<div className="h-1 w-full bg-slate-500/10 rounded-full overflow-hidden">
+															<div
+																className="h-full bg-primary transition-all duration-1000 ease-linear"
+																style={{ width: `${progress}%` }}></div>
+														</div>
+													)}
+												</div>
+											</div>
+										</SwiperSlide>
+									)
+								})}
+							</Swiper>
+
+							{/* Navigation Dots */}
+							{todaysEvents.length > 1 && (
+								<div className="flex justify-center gap-2 mt-4">
+									{todaysEvents.map((_, idx) => (
+										<button
+											key={idx}
+											onClick={() => swiperRef.current?.slideTo(idx)}
+											className={`transition-all duration-300 rounded-full ${
+												idx === activeIndex ? 'w-8 h-2 bg-primary' : 'w-2 h-2 bg-slate-500/50 hover:bg-primary/50'
+											}`}
+											aria-label={`Przejdź do zajęć ${idx + 1}`}
+										/>
+									))}
+								</div>
+							)}
+						</div>
+					)}
+				</div>
 			</section>
 
 			{/* Day Navigator - moved to bottom of schedule section */}
