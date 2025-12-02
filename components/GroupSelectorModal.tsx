@@ -59,16 +59,8 @@ const GroupSelectorModal: React.FC<GroupSelectorModalProps> = ({ isOpen, onClose
 		}
 	}, [isOpen])
 
-	// Load faculties or teachers based on step
-	useEffect(() => {
-		if (isOpen) {
-			if (currentStep === 'faculty') {
-				loadFaculties()
-			} else if (currentStep === 'allTeachers') {
-				loadAllTeachers()
-			}
-		}
-	}, [isOpen, currentStep])
+	// Load faculties or teachers based on step - REMOVED useEffect
+	// We now trigger loading in the handlers for smoother transitions
 
 	// Filter teachers
 	useEffect(() => {
@@ -115,19 +107,22 @@ const GroupSelectorModal: React.FC<GroupSelectorModalProps> = ({ isOpen, onClose
 		setSelectedRole(role)
 		if (role === 'student') {
 			setCurrentStep('faculty')
+			loadFaculties()
 		} else {
 			setCurrentStep('allTeachers')
+			loadAllTeachers()
 		}
 	}
 
 	const handleFacultySelect = async (faculty: string) => {
 		setSelectedFaculty(faculty)
+		setCurrentStep('major')
 		setLoading(true)
 		setError('')
+		
 		try {
 			const data = await fetchMajorsForFaculty(faculty)
 			setMajors(data)
-			setCurrentStep('major')
 		} catch (err) {
 			setError('Nie udało się pobrać kierunków')
 		} finally {
@@ -147,12 +142,13 @@ const GroupSelectorModal: React.FC<GroupSelectorModalProps> = ({ isOpen, onClose
 
 	const handleSemesterSelect = async (semester: number) => {
 		setSelectedSemester(semester)
+		setCurrentStep('group')
 		setLoading(true)
 		setError('')
+
 		try {
 			const data = await fetchGroupsForMajor(selectedFaculty, selectedMajor, selectedStudyType, semester)
 			setGroups(data)
-			setCurrentStep('group')
 		} catch (err) {
 			setError('Nie udało się pobrać grup')
 		} finally {
@@ -164,11 +160,8 @@ const GroupSelectorModal: React.FC<GroupSelectorModalProps> = ({ isOpen, onClose
 		setSelectedGroup(group)
 		try {
 			await saveSelectedGroup(group)
-
-			// Force refresh schedule data for the new group
-			const { fetchScheduleForWeek } = await import('../services/scheduleService')
-			await fetchScheduleForWeek(group.id, undefined, true, group.type === 'teacher')
-
+			// Don't await schedule fetch here to avoid UI lag
+			// The main page will handle fetching/loading
 			onGroupSelected()
 			onClose()
 		} catch (err) {

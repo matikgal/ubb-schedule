@@ -202,13 +202,29 @@ const SchedulePage: React.FC = () => {
 				</div>
 			</div>
 
-			{/* Week Info */}
-			<div className="text-center mb-6">
-				<div className="text-xs font-bold text-muted uppercase tracking-wide mb-0.5">Tydzień</div>
-				<div className="text-main font-display font-bold text-base">
-					{currentWeek ? currentWeek.label : 'Brak zajęć'}
+			{/* Week Info with Navigation */}
+			<div className="flex items-center justify-between mb-6 bg-surface border border-border rounded-2xl p-2">
+				<button
+					onClick={handlePrevWeek}
+					className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-hover text-muted hover:text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+					disabled={!currentWeekId || availableWeeks.findIndex(w => w.id === currentWeekId) <= 0}>
+					<ChevronLeft size={20} />
+				</button>
+
+				<div className="text-center">
+					<div className="text-xs font-bold text-muted uppercase tracking-wide mb-0.5">Tydzień</div>
+					<div className="text-main font-display font-bold text-base">
+						{currentWeek ? currentWeek.label : 'Brak zajęć'}
+					</div>
+					{isLoading && <div className="mt-1 mx-auto w-12 h-0.5 bg-primary rounded-full animate-pulse" />}
 				</div>
-				{isLoading && <div className="mt-2 mx-auto w-16 h-0.5 bg-primary rounded-full animate-pulse" />}
+
+				<button
+					onClick={handleNextWeek}
+					className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-hover text-muted hover:text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+					disabled={!currentWeekId || availableWeeks.findIndex(w => w.id === currentWeekId) >= availableWeeks.length - 1}>
+					<ChevronRight size={20} />
+				</button>
 			</div>
 
 			{/* Loading State - Skeleton Screens */}
@@ -412,25 +428,6 @@ const SchedulePage: React.FC = () => {
 							</div>
 						)
 					})}
-				</div>
-			)}
-
-			{/* Week Navigator - moved to bottom */}
-			{!isLoading && !error && (
-				<div className="flex items-center gap-3 mt-6">
-					<button
-						onClick={handlePrevWeek}
-						className="flex-1 h-12 flex items-center justify-center gap-2 bg-surface hover:bg-hover rounded-xl border border-border text-main transition-colors font-medium text-sm">
-						<ChevronLeft size={18} />
-						<span>Poprzedni</span>
-					</button>
-
-					<button
-						onClick={handleNextWeek}
-						className="flex-1 h-12 flex items-center justify-center gap-2 bg-surface hover:bg-hover rounded-xl border border-border text-main transition-colors font-medium text-sm">
-						<span>Następny</span>
-						<ChevronRight size={18} />
-					</button>
 				</div>
 			)}
 
