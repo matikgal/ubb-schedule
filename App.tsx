@@ -208,8 +208,8 @@ const SettingsPage = () => {
 					{groupData ? (
 						<div className="flex justify-between items-center">
 							<div>
-								<div className="text-main text-sm font-bold">{groupData.group}</div>
-								<div className="text-[10px] text-muted">{groupData.field}</div>
+								<div className="text-main text-sm font-bold">{groupData.name}</div>
+								<div className="text-[10px] text-muted">{groupData.type === 'teacher' ? 'Wykładowca' : groupData.field}</div>
 							</div>
 							<button
 								onClick={() => setIsGroupSelectorOpen(true)}

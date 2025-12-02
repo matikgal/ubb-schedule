@@ -14,13 +14,14 @@ export interface ClassEvent {
 }
 
 export interface GroupInfo {
-  id: number; // group_id from Supabase
-  name: string; // e.g., "Gr. 3A"
+  id: number; // group_id or teacher_id
+  name: string; // group_name or teacher_name
   faculty: string;
-  field: string; // Kierunek (major)
-  studyType: string; // stacjonarne/zaoczne
+  field?: string; // Kierunek (major) - optional for teachers
+  studyType?: string; // stacjonarne/zaoczne - optional for teachers
   weeksCount: number; // Number of weeks in schedule
   semester?: number; // Optional for backward compatibility
+  type?: 'group' | 'teacher'; // Discriminator, optional for backward compatibility (default: group)
 }
 
 export interface SearchFilters {
@@ -52,6 +53,15 @@ export interface SupabaseScheduleRow {
   faculty: string;
   major: string;
   study_type: string;
+  weeks_count: number;
+  data: ScheduleData;
+  updated_at: string;
+}
+
+export interface SupabaseTeacherScheduleRow {
+  teacher_id: number;
+  teacher_name: string;
+  faculty: string;
   weeks_count: number;
   data: ScheduleData;
   updated_at: string;

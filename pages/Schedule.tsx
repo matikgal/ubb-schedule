@@ -34,10 +34,11 @@ const SchedulePage: React.FC = () => {
 			if (!selectedGroup) return
 
 			const { getAvailableWeeks, getCurrentWeekId } = await import('../services/scheduleService')
-			const weeks = await getAvailableWeeks(selectedGroup.id)
+			const isTeacher = selectedGroup.type === 'teacher'
+			const weeks = await getAvailableWeeks(selectedGroup.id, isTeacher)
 			setAvailableWeeks(weeks)
 
-			const currentId = await getCurrentWeekId(selectedGroup.id)
+			const currentId = await getCurrentWeekId(selectedGroup.id, isTeacher)
 			if (currentId) {
 				setCurrentWeekId(currentId)
 			}
@@ -71,7 +72,8 @@ const SchedulePage: React.FC = () => {
 					return
 				}
 
-				const scheduleData = await fetchScheduleForWeek(selectedGroup.id, currentWeekId)
+				const isTeacher = selectedGroup.type === 'teacher'
+				const scheduleData = await fetchScheduleForWeek(selectedGroup.id, currentWeekId, false, isTeacher)
 				setEvents(scheduleData)
 			} catch (err) {
 				const errorMessage = err instanceof Error ? err.message : ERROR_MESSAGES.FETCH_FAILED

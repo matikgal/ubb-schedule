@@ -8,6 +8,7 @@ import { enhancedCacheManager, CACHE_TTL, CACHE_PRIORITY } from './enhancedCache
 const FACULTIES_KEY = 'cached_faculties'
 const MAJORS_KEY_PREFIX = 'cached_majors_'
 const GROUPS_KEY_PREFIX = 'cached_groups_'
+const TEACHERS_KEY_PREFIX = 'cached_teachers_'
 
 /**
  * Pobiera unikalne wydziały - najpierw ze storage, potem z Supabase
@@ -98,7 +99,7 @@ export async function fetchMajorsForFaculty(faculty: string): Promise<string[]> 
 
 		const cached = await getJSON<string[]>(cacheKey)
 		if (cached) {
-			console.log('📦 Using cached majors for', faculty, ':', cached)
+			console.log('Using cached majors for', faculty, ':', cached)
 
 			if (navigator.onLine && isSupabaseAvailable && supabase) {
 				updateMajorsInBackground(faculty)
@@ -108,7 +109,7 @@ export async function fetchMajorsForFaculty(faculty: string): Promise<string[]> 
 		}
 
 		if (!isSupabaseAvailable || !supabase) {
-			console.log('📴 No Supabase and no cache available')
+			console.log('No Supabase and no cache available')
 			return []
 		}
 
@@ -116,11 +117,11 @@ export async function fetchMajorsForFaculty(faculty: string): Promise<string[]> 
 			throw new Error(ERROR_MESSAGES.NO_CONNECTION)
 		}
 
-		console.log('🔍 Fetching majors for faculty:', faculty)
+		console.log('Fetching majors for faculty:', faculty)
 
 		const { data, error } = await supabase.from('schedules').select('major').eq('faculty', faculty)
 
-		console.log('📊 Supabase response (majors):', { data, error })
+		console.log('Supabase response (majors):', { data, error })
 
 		if (error) {
 			throw new Error(`Failed to fetch majors: ${error.message}`)
@@ -136,7 +137,7 @@ export async function fetchMajorsForFaculty(faculty: string): Promise<string[]> 
 		const sorted = uniqueMajors.sort()
 
 		await setJSON(cacheKey, sorted)
-		console.log('✅ Majors cached')
+		console.log('Majors cached')
 
 		return sorted
 	} catch (error) {
@@ -190,7 +191,7 @@ export async function fetchGroupsForMajor(
 		const cached = await getJSON<GroupInfo[]>(cacheKey)
 		if (cached) {
 			let groups = cached
-			console.log('📦 Using cached groups:', groups.length)
+			console.log('Using cached groups:', groups.length)
 
 			if (semester) {
 				groups = groups.filter(g => g.semester === semester)
@@ -222,7 +223,7 @@ export async function fetchGroupsForMajor(
 			.eq('faculty', faculty)
 			.eq('major', majorWithSuffix)
 
-		console.log('📊 Supabase response (groups):', { data, error, count: data?.length })
+		console.log('Supabase response (groups):', { data, error, count: data?.length })
 
 		if (error) {
 			throw new Error(`Failed to fetch groups: ${error.message}`)
@@ -240,12 +241,13 @@ export async function fetchGroupsForMajor(
 			studyType: row.study_type,
 			weeksCount: row.weeks_count,
 			semester: extractSemesterFromGroupName(row.group_name) || undefined,
+			type: 'group',
 		}))
 
 		// Try to cache, but don't fail if quota exceeded
 		try {
 			await setJSON(cacheKey, groups)
-			console.log('✅ Groups cached')
+			console.log('Groups cached')
 		} catch (cacheError) {
 			console.warn('⚠️ Could not cache groups (quota exceeded), continuing without cache:', cacheError)
 		}
@@ -293,11 +295,214 @@ async function updateGroupsInBackground(faculty: string, major: string, studyTyp
 				studyType: row.study_type,
 				weeksCount: row.weeks_count,
 				semester: extractSemesterFromGroupName(row.group_name) || undefined,
+				type: 'group',
 			}))
 
 			const cacheKey = `${GROUPS_KEY_PREFIX}${faculty}_${major}_${studyType}`
 			await setJSON(cacheKey, groups)
-			console.log('🔄 Groups updated in background')
+			console.log('Groups updated in background')
+		}
+	} catch (error) {
+		console.log('Background update failed (ignored):', error)
+	}
+}
+
+export async function fetchTeachersForFaculty(faculty: string): Promise<GroupInfo[]> {
+	try {
+		const cacheKey = `${TEACHERS_KEY_PREFIX}${faculty}`
+
+		const cached = await getJSON<GroupInfo[]>(cacheKey)
+		if (cached) {
+			console.log('Using cached teachers:', cached.length)
+
+			if (navigator.onLine && isSupabaseAvailable && supabase) {
+				updateTeachersInBackground(faculty)
+			}
+
+			return cached
+		}
+
+		if (!isSupabaseAvailable || !supabase) {
+			console.log('No Supabase and no cache available')
+			return []
+		}
+
+		if (!navigator.onLine) {
+			throw new Error(ERROR_MESSAGES.NO_CONNECTION)
+		}
+
+		console.log('Fetching teachers for:', faculty)
+
+		const { data, error } = await supabase
+			.from('teacher_schedules')
+			.select('teacher_id, teacher_name, faculty, weeks_count')
+			.eq('faculty', faculty)
+
+		console.log('Supabase response (teachers):', { data, error, count: data?.length })
+
+		if (error) {
+			throw new Error(`Failed to fetch teachers: ${error.message}`)
+		}
+
+		if (!data) {
+			return []
+		}
+
+		const teachers: GroupInfo[] = data.map(row => ({
+			id: row.teacher_id,
+			name: row.teacher_name,
+			faculty: row.faculty,
+			weeksCount: row.weeks_count,
+			type: 'teacher',
+		}))
+
+		// Sort alphabetically
+		teachers.sort((a, b) => a.name.localeCompare(b.name))
+
+		try {
+			await setJSON(cacheKey, teachers)
+			console.log('Teachers cached')
+		} catch (cacheError) {
+			console.warn('Could not cache teachers (quota exceeded), continuing without cache:', cacheError)
+		}
+
+		return teachers
+	} catch (error) {
+		console.error('Error fetching teachers:', error)
+
+		const cacheKey = `${TEACHERS_KEY_PREFIX}${faculty}`
+		const cached = await getJSON<GroupInfo[]>(cacheKey)
+		if (cached) {
+			return cached
+		}
+
+		throw error
+	}
+}
+
+async function updateTeachersInBackground(faculty: string): Promise<void> {
+	try {
+		if (!supabase) return
+
+		const { data, error } = await supabase
+			.from('teacher_schedules')
+			.select('teacher_id, teacher_name, faculty, weeks_count')
+			.eq('faculty', faculty)
+
+		if (!error && data) {
+			const teachers: GroupInfo[] = data.map(row => ({
+				id: row.teacher_id,
+				name: row.teacher_name,
+				faculty: row.faculty,
+				weeksCount: row.weeks_count,
+				type: 'teacher',
+			}))
+
+			teachers.sort((a, b) => a.name.localeCompare(b.name))
+
+			const cacheKey = `${TEACHERS_KEY_PREFIX}${faculty}`
+			await setJSON(cacheKey, teachers)
+			console.log('Teachers updated in background')
+		}
+	} catch (error) {
+		console.log('Background update failed (ignored):', error)
+	}
+}
+
+export async function fetchAllTeachers(): Promise<GroupInfo[]> {
+	try {
+		const cacheKey = `${TEACHERS_KEY_PREFIX}all`
+
+		const cached = await getJSON<GroupInfo[]>(cacheKey)
+		if (cached) {
+			console.log('📦 Using cached all teachers:', cached.length)
+
+			if (navigator.onLine && isSupabaseAvailable && supabase) {
+				updateAllTeachersInBackground()
+			}
+
+			return cached
+		}
+
+		if (!isSupabaseAvailable || !supabase) {
+			console.log('📴 No Supabase and no cache available')
+			return []
+		}
+
+		if (!navigator.onLine) {
+			throw new Error(ERROR_MESSAGES.NO_CONNECTION)
+		}
+
+		console.log('🔍 Fetching all teachers')
+
+		const { data, error } = await supabase
+			.from('teacher_schedules')
+			.select('teacher_id, teacher_name, faculty, weeks_count')
+
+		console.log('📊 Supabase response (all teachers):', { data, error, count: data?.length })
+
+		if (error) {
+			throw new Error(`Failed to fetch teachers: ${error.message}`)
+		}
+
+		if (!data) {
+			return []
+		}
+
+		const teachers: GroupInfo[] = data.map(row => ({
+			id: row.teacher_id,
+			name: row.teacher_name,
+			faculty: row.faculty,
+			weeksCount: row.weeks_count,
+			type: 'teacher',
+		}))
+
+		// Sort alphabetically
+		teachers.sort((a, b) => a.name.localeCompare(b.name))
+
+		try {
+			await setJSON(cacheKey, teachers)
+			console.log('✅ All teachers cached')
+		} catch (cacheError) {
+			console.warn('⚠️ Could not cache teachers (quota exceeded), continuing without cache:', cacheError)
+		}
+
+		return teachers
+	} catch (error) {
+		console.error('Error fetching all teachers:', error)
+
+		const cacheKey = `${TEACHERS_KEY_PREFIX}all`
+		const cached = await getJSON<GroupInfo[]>(cacheKey)
+		if (cached) {
+			return cached
+		}
+
+		throw error
+	}
+}
+
+async function updateAllTeachersInBackground(): Promise<void> {
+	try {
+		if (!supabase) return
+
+		const { data, error } = await supabase
+			.from('teacher_schedules')
+			.select('teacher_id, teacher_name, faculty, weeks_count')
+
+		if (!error && data) {
+			const teachers: GroupInfo[] = data.map(row => ({
+				id: row.teacher_id,
+				name: row.teacher_name,
+				faculty: row.faculty,
+				weeksCount: row.weeks_count,
+				type: 'teacher',
+			}))
+
+			teachers.sort((a, b) => a.name.localeCompare(b.name))
+
+			const cacheKey = `${TEACHERS_KEY_PREFIX}all`
+			await setJSON(cacheKey, teachers)
+			console.log('🔄 All teachers updated in background')
 		}
 	} catch (error) {
 		console.log('Background update failed (ignored):', error)
@@ -310,7 +515,7 @@ export async function saveSelectedGroup(groupInfo: GroupInfo): Promise<void> {
 			ttl: CACHE_TTL.SELECTED_GROUP,
 			priority: CACHE_PRIORITY.CRITICAL,
 		})
-		console.log('✅ Selected group saved with critical priority')
+		console.log('Selected group saved with critical priority')
 	} catch (error) {
 		console.error('Error saving selected group:', error)
 		throw new Error('Failed to save selected group to storage')

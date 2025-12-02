@@ -7,14 +7,16 @@ import { ERROR_MESSAGES } from '../constants/errorMessages'
 export { ERROR_MESSAGES }
 
 export async function fetchScheduleForWeek(
-	groupId: number,
+	entityId: number,
 	weekId?: number | string,
-	forceRefresh: boolean = false
+	forceRefresh: boolean = false,
+	isTeacher: boolean = false
 ): Promise<ClassEvent[]> {
 	try {
 		// Step 1: Check cache first (unless force refresh)
-		if (!forceRefresh) {
-			const cachedData = weekId ? await getCachedSchedule(groupId, weekId) : await getCachedSchedule(groupId)
+		// Step 1: Check cache first (unless force refresh)
+		if (!forceRefresh && weekId) {
+			const cachedData = await getCachedSchedule(entityId, weekId)
 
 			if (cachedData && cachedData.length > 0) {
 				console.log('📦 Using cached schedule data')
@@ -32,9 +34,18 @@ export async function fetchScheduleForWeek(
 			throw new Error(ERROR_MESSAGES.NO_CONNECTION)
 		}
 
-		console.log('🔍 Fetching from Supabase:', { groupId, weekId, forceRefresh })
+		console.log('🔍 Fetching from Supabase:', { entityId, weekId, forceRefresh, isTeacher })
 
-		const { data, error } = await supabase.from('schedules').select('*').eq('group_id', groupId).single()
+		let data, error
+		if (isTeacher) {
+			const response = await supabase.from('teacher_schedules').select('*').eq('teacher_id', entityId).single()
+			data = response.data
+			error = response.error
+		} else {
+			const response = await supabase.from('schedules').select('*').eq('group_id', entityId).single()
+			data = response.data
+			error = response.error
+		}
 
 		if (error) {
 			throw new Error(ERROR_MESSAGES.FETCH_FAILED)
@@ -44,7 +55,7 @@ export async function fetchScheduleForWeek(
 			throw new Error(ERROR_MESSAGES.INVALID_GROUP)
 		}
 
-		const scheduleRow = data as SupabaseScheduleRow
+		const scheduleRow = data as any // SupabaseScheduleRow | SupabaseTeacherScheduleRow
 
 		const availableWeeks = scheduleRow.data?.weeks ? Object.keys(scheduleRow.data.weeks) : []
 
@@ -66,23 +77,24 @@ export async function fetchScheduleForWeek(
 		}
 
 		const events: ClassEvent[] = []
+		const entityName = isTeacher ? scheduleRow.teacher_name : scheduleRow.group_name
 
 		for (const [dayName, classItems] of Object.entries(weekData.schedule)) {
 			if (Array.isArray(classItems) && classItems.length > 0) {
-				const dayEvents = await transformSupabaseToClassEvents(classItems, dayName, scheduleRow.group_name)
+				const dayEvents = await transformSupabaseToClassEvents(classItems, dayName, entityName)
 				events.push(...dayEvents)
 			}
 		}
 
 		const actualWeekId = parseInt(actualWeekKey, 10)
-		await setCachedSchedule(groupId, actualWeekId, events, scheduleRow.updated_at)
+		await setCachedSchedule(entityId, actualWeekId, events, scheduleRow.updated_at)
 
 		console.log('✅ Schedule fetched and cached:', events.length, 'events')
 
 		return events
 	} catch (error) {
 		// Fallback to cache on error
-		const cachedData = await getCachedSchedule(groupId, weekId)
+		const cachedData = await getCachedSchedule(entityId, weekId)
 		if (cachedData && cachedData.length > 0) {
 			console.warn('Error fetching schedule, using cache:', error)
 			return cachedData
@@ -100,17 +112,27 @@ export async function fetchScheduleForWeek(
 // Removed background update function - we only fetch when selecting a group
 
 /**
- * Get all available weeks for a group
+ * Get all available weeks for a group or teacher
  */
 export async function getAvailableWeeks(
-	groupId: number
+	entityId: number,
+	isTeacher: boolean = false
 ): Promise<Array<{ id: string; label: string; start: Date; end: Date }>> {
 	if (!isSupabaseAvailable || !supabase) {
 		return []
 	}
 
 	try {
-		const { data, error } = await supabase.from('schedules').select('data').eq('group_id', groupId).single()
+		let data, error
+		if (isTeacher) {
+			const response = await supabase.from('teacher_schedules').select('data').eq('teacher_id', entityId).single()
+			data = response.data
+			error = response.error
+		} else {
+			const response = await supabase.from('schedules').select('data').eq('group_id', entityId).single()
+			data = response.data
+			error = response.error
+		}
 
 		if (error || !data) {
 			return []
@@ -148,8 +170,8 @@ export async function getAvailableWeeks(
 /**
  * Find current week ID based on today's date
  */
-export async function getCurrentWeekId(groupId: number): Promise<string | null> {
-	const weeks = await getAvailableWeeks(groupId)
+export async function getCurrentWeekId(entityId: number, isTeacher: boolean = false): Promise<string | null> {
+	const weeks = await getAvailableWeeks(entityId, isTeacher)
 	const today = new Date()
 
 	for (const week of weeks) {
