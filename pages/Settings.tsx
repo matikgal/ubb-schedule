@@ -64,19 +64,18 @@ const SettingsPage = () => {
 	const navigate = useNavigate()
 
 	// Mock Data
-	const appVersion = '2.4.2'
+	const appVersion = '1.0.0'
 	const lastSyncDate = '15 Paź 2023, 04:30'
 	const avatarOptions = ['Alexander', 'Aneka', 'Felix', 'Jake', 'Jocelyn', 'Micah', 'Minia', 'Robert', 'Sorell', 'Zoe']
 
-	const handleClearAppData = async () => {
-		if (
-			!confirm(
-				'Czy na pewno chcesz wyczyścić wszystkie dane aplikacji? To usunie:\n\n• Zapisaną grupę\n• Nazwę użytkownika i awatar\n• Cache planów zajęć\n• Wszystkie ustawienia\n\nAplikacja zostanie zrestartowana.'
-			)
-		) {
-			return
-		}
+	// Clear Data Modal State
+	const [isClearDataModalOpen, setIsClearDataModalOpen] = useState(false)
 
+	const handleClearAppData = () => {
+		setIsClearDataModalOpen(true)
+	}
+
+	const confirmClearData = async () => {
 		try {
 			// Wyczyść localStorage
 			localStorage.clear()
@@ -90,7 +89,6 @@ const SettingsPage = () => {
 			}
 
 			// Restart aplikacji
-			alert('Dane zostały wyczyszczone. Aplikacja zostanie zrestartowana.')
 			window.location.reload()
 		} catch (error) {
 			console.error('Error clearing data:', error)
@@ -320,7 +318,7 @@ const SettingsPage = () => {
 								<span className="text-[10px] text-muted">{lastSyncDate}</span>
 							</div>
 						</div>
-						<div className="px-2 py-1 bg-green-500/10 text-green-500 text-[10px] font-bold rounded">OK</div>
+						<div className="px-2 py-1 bg-green-500/10 text-green-500 text-[10px] font-bold rounded">AKTUALNA</div>
 					</div>
 
 					<div
@@ -357,14 +355,14 @@ const SettingsPage = () => {
 				Zgłoś błąd / Kontakt
 			</button>
 
-			<div className="text-center space-y-3 pt-4 pb-2 border-t border-border">
+			<div className="text-center space-y-4 pt-6 pb-4 border-t border-border">
 				<div className="flex justify-center gap-3 text-xs text-muted font-bold tracking-wide uppercase">
 					<span>Wersja {appVersion}</span>
 					<span>•</span>
 					<span className="flex items-center gap-1">
 						Źródło:
 						<a
-							href="https://plany.ubb.edu.pl/"
+							href="https://ubb.edu.pl/"
 							target="_blank"
 							rel="noopener noreferrer"
 							className="hover:text-primary transition-colors underline decoration-dotted">
@@ -373,11 +371,11 @@ const SettingsPage = () => {
 					</span>
 				</div>
 
-				<div className="space-y-2">
-					<p className="text-xs text-muted">Dane planu są własnością Uniwersytetu Bielsko-Bialskiego.</p>
+				<div className="space-y-3">
+					<p className="text-xs text-muted">Wszystkie dane są własnością Uniwersytetu Bielsko-Bialskiego.</p>
 
 					<div className="text-xs text-muted font-medium">
-						<p className="mb-1">Twórcy aplikacji:</p>
+						<p className="mb-1.5 uppercase tracking-wider opacity-70">Twórcy aplikacji</p>
 						<div className="flex items-center justify-center gap-2">
 							<span className="text-main font-bold">Mateusz Gałuszka</span>
 							<span className="text-muted/50">•</span>
@@ -385,7 +383,20 @@ const SettingsPage = () => {
 						</div>
 					</div>
 
-					<p className="text-[10px] text-muted/50 pt-1">Assets: DiceBear, Unsplash, Lucide Icons</p>
+					<div className="pt-2 border-t border-border/50 w-2/3 mx-auto">
+						<p className="text-[10px] text-muted/60 uppercase tracking-widest mb-1">Powered by</p>
+						<div className="flex justify-center gap-3 text-[10px] text-muted font-mono">
+							<span>React</span>
+							<span>•</span>
+							<span>Vite</span>
+							<span>•</span>
+							<span>Supabase</span>
+							<span>•</span>
+							<span>Capacitor</span>
+						</div>
+					</div>
+					
+					<p className="text-[9px] text-muted/40 pt-1">Assets: DiceBear, Unsplash, Lucide Icons</p>
 				</div>
 			</div>
 
@@ -395,6 +406,47 @@ const SettingsPage = () => {
 				onClose={() => setIsGroupSelectorOpen(false)}
 				onGroupSelected={handleGroupSelected}
 			/>
+
+			{/* Clear Data Confirmation Modal */}
+			<Modal
+				isOpen={isClearDataModalOpen}
+				onClose={() => setIsClearDataModalOpen(false)}
+				title="Wyczyść dane"
+			>
+				<div className="space-y-4">
+					<div className="p-4 bg-red-500/10 rounded-xl border border-red-500/20 flex gap-3">
+						<div className="text-red-500 shrink-0 mt-0.5">
+							<Trash2 size={20} />
+						</div>
+						<div className="space-y-1">
+							<p className="text-sm font-bold text-red-500">Czy na pewno?</p>
+							<p className="text-xs text-muted">
+								Ta operacja jest nieodwracalna. Zostaną usunięte:
+							</p>
+							<ul className="text-xs text-muted list-disc list-inside ml-1 space-y-0.5 pt-1">
+								<li>Zapisana grupa i ustawienia</li>
+								<li>Pobrane plany zajęć (cache)</li>
+								<li>Twój profil (imię, awatar)</li>
+							</ul>
+						</div>
+					</div>
+
+					<div className="flex gap-3 pt-2">
+						<button
+							onClick={() => setIsClearDataModalOpen(false)}
+							className="flex-1 py-3 rounded-xl bg-surface border border-border text-main font-bold text-sm hover:bg-hover transition-colors"
+						>
+							Anuluj
+						</button>
+						<button
+							onClick={confirmClearData}
+							className="flex-1 py-3 rounded-xl bg-red-500 text-white font-bold text-sm hover:bg-red-600 transition-colors shadow-lg shadow-red-500/20"
+						>
+							Wyczyść wszystko
+						</button>
+					</div>
+				</div>
+			</Modal>
 
 			{/* Contact Modal */}
 			<Modal

@@ -1,20 +1,15 @@
 import React, { useState, useEffect } from 'react'
-import { ArrowLeft, User, GraduationCap, Mail, Phone, MapPin } from 'lucide-react'
-import { ClassEvent } from '../types'
+import { ArrowLeft, Users, GraduationCap, Calendar } from 'lucide-react'
+import { ClassEvent, GroupInfo } from '../types'
 import { fetchScheduleForWeek, getAvailableWeeks, getCurrentWeekId } from '../services/scheduleService'
 import ScheduleViewer from './ScheduleViewer'
 
-interface LecturerProfileProps {
-	teacherId: number
-	teacherName: string
-	faculty: string
-	email?: string | null
-	phone?: string | null
-	office?: string | null
+interface GroupScheduleViewProps {
+	group: GroupInfo
 	onBack: () => void
 }
 
-const LecturerProfile: React.FC<LecturerProfileProps> = ({ teacherId, teacherName, faculty, email, phone, office, onBack }) => {
+const GroupScheduleView: React.FC<GroupScheduleViewProps> = ({ group, onBack }) => {
 	const [events, setEvents] = useState<ClassEvent[]>([])
 	const [currentWeekId, setCurrentWeekId] = useState<string | null>(null)
 	const [availableWeeks, setAvailableWeeks] = useState<Array<{ id: string; label: string; start: Date; end: Date }>>([])
@@ -26,25 +21,18 @@ const LecturerProfile: React.FC<LecturerProfileProps> = ({ teacherId, teacherNam
 
 	// Load available weeks on mount
 	useEffect(() => {
-		if (!teacherId) {
-			console.error('❌ LecturerProfile: teacherId is missing!', { teacherId, teacherName })
-			return
-		}
-
-		console.log('👤 LecturerProfile mounted:', { teacherId, teacherName, email, phone, office })
-
 		const loadWeeks = async () => {
-			const weeks = await getAvailableWeeks(teacherId, true)
+			const weeks = await getAvailableWeeks(group.id, false)
 			setAvailableWeeks(weeks)
 
-			const currentId = await getCurrentWeekId(teacherId, true)
+			const currentId = await getCurrentWeekId(group.id, false)
 			if (currentId) {
 				setCurrentWeekId(currentId)
 			}
 		}
 
 		loadWeeks()
-	}, [teacherId, teacherName, email, phone, office])
+	}, [group.id])
 
 	// Load data for current week
 	useEffect(() => {
@@ -59,7 +47,7 @@ const LecturerProfile: React.FC<LecturerProfileProps> = ({ teacherId, teacherNam
 					return
 				}
 
-				const scheduleData = await fetchScheduleForWeek(teacherId, currentWeekId, false, true)
+				const scheduleData = await fetchScheduleForWeek(group.id, currentWeekId, false, false)
 				setEvents(scheduleData)
 			} catch (err) {
 				const errorMessage = err instanceof Error ? err.message : 'Nie udało się pobrać planu'
@@ -74,7 +62,7 @@ const LecturerProfile: React.FC<LecturerProfileProps> = ({ teacherId, teacherNam
 		if (currentWeekId !== null) {
 			loadSchedule()
 		}
-	}, [currentWeekId, teacherId])
+	}, [currentWeekId, group.id])
 
 	const handlePrevWeek = () => {
 		if (!currentWeekId || availableWeeks.length === 0) return
@@ -124,33 +112,15 @@ const LecturerProfile: React.FC<LecturerProfileProps> = ({ teacherId, teacherNam
 				</button>
 				<div className="space-y-2">
 					<div>
-						<h1 className="text-2xl font-display font-bold text-main leading-tight">{teacherName}</h1>
+						<h1 className="text-2xl font-display font-bold text-main leading-tight">{group.name}</h1>
 						<div className="flex items-center gap-2 text-sm text-muted mt-1">
 							<GraduationCap size={16} />
-							<span>{faculty}</span>
+							<span>{group.faculty}</span>
 						</div>
-					</div>
-
-					{/* Contact Info */}
-					<div className="flex flex-col gap-1.5 pt-1">
-						{email && (
-							<div className="flex items-center gap-2 text-sm text-main">
-								<Mail size={14} className="text-primary" />
-								<a href={`mailto:${email}`} className="hover:text-primary transition-colors">{email}</a>
-							</div>
-						)}
-						{phone && (
-							<div className="flex items-center gap-2 text-sm text-main">
-								<Phone size={14} className="text-primary" />
-								<a href={`tel:${phone}`} className="hover:text-primary transition-colors">{phone}</a>
-							</div>
-						)}
-						{office && (
-							<div className="flex items-center gap-2 text-sm text-main">
-								<MapPin size={14} className="text-primary" />
-								<span>{office}</span>
-							</div>
-						)}
+						<div className="flex items-center gap-2 text-sm text-muted mt-1">
+							<Users size={16} />
+							<span>{group.field} {group.studyType}</span>
+						</div>
 					</div>
 				</div>
 			</div>
@@ -168,7 +138,7 @@ const LecturerProfile: React.FC<LecturerProfileProps> = ({ teacherId, teacherNam
 					onDateSelect={handleDateSelect}
 					header={
 						<div className="flex items-center gap-2 mb-4">
-							<User size={20} className="text-primary" />
+							<Calendar size={20} className="text-primary" />
 							<h2 className="text-lg font-bold text-main">Plan zajęć</h2>
 						</div>
 					}
@@ -178,4 +148,4 @@ const LecturerProfile: React.FC<LecturerProfileProps> = ({ teacherId, teacherNam
 	)
 }
 
-export default LecturerProfile
+export default GroupScheduleView

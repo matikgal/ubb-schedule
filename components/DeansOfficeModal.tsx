@@ -129,7 +129,7 @@ const DeansOfficeModal: React.FC<DeansOfficeModalProps> = ({ isOpen, onClose }) 
 		<Modal
 			isOpen={isOpen}
 			onClose={handleClose}
-			className="p-0 w-full max-h-[80vh] min-h-[400px] mb-20 flex flex-col"
+			className="p-0 w-full max-h-[65vh] min-h-[400px] mb-20 flex flex-col"
 			scrollable={false}
 			hideCloseButton={true}
 		>

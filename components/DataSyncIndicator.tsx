@@ -23,8 +23,14 @@ const DataSyncIndicator: React.FC = () => {
 		window.addEventListener('online', handleOnline)
 		window.addEventListener('offline', handleOffline)
 
+		// Force hide after 15 seconds to prevent stuck badge
+		const forceHideTimeout = setTimeout(() => {
+			setIsInitialized(true)
+		}, 15000)
+
 		return () => {
 			clearInterval(interval)
+			clearTimeout(forceHideTimeout)
 			window.removeEventListener('online', handleOnline)
 			window.removeEventListener('offline', handleOffline)
 		}

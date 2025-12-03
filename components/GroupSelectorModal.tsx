@@ -7,12 +7,13 @@ import Modal from './Modal'
 interface GroupSelectorModalProps {
 	isOpen: boolean
 	onClose: () => void
-	onGroupSelected: () => void
+	onGroupSelected: (group?: GroupInfo) => void
+	mode?: 'select' | 'preview'
 }
 
 type Step = 'role' | 'faculty' | 'major' | 'studyType' | 'semester' | 'group' | 'allTeachers'
 
-const GroupSelectorModal: React.FC<GroupSelectorModalProps> = ({ isOpen, onClose, onGroupSelected }) => {
+const GroupSelectorModal: React.FC<GroupSelectorModalProps> = ({ isOpen, onClose, onGroupSelected, mode = 'select' }) => {
 	const [currentStep, setCurrentStep] = useState<Step>('role')
 
 	// Selections
@@ -167,12 +168,21 @@ const GroupSelectorModal: React.FC<GroupSelectorModalProps> = ({ isOpen, onClose
 
 		if (currentStep === 'group' || currentStep === 'allTeachers') {
 			const group = tempSelection as GroupInfo
+			
+			// If in preview mode, just return the group and close
+			if (mode === 'preview') {
+				onGroupSelected(group)
+				onClose()
+				return
+			}
+
+			// If in select mode (default), save and set as main group
 			setSelectedGroup(group)
 			try {
 				await saveSelectedGroup(group)
 				const { fetchScheduleForWeek } = await import('../services/scheduleService')
 				await fetchScheduleForWeek(group.id, undefined, true, group.type === 'teacher')
-				onGroupSelected()
+				onGroupSelected(group)
 				onClose()
 			} catch (err) {
 				setError('Nie udało się zapisać grupy')
@@ -223,7 +233,7 @@ const GroupSelectorModal: React.FC<GroupSelectorModalProps> = ({ isOpen, onClose
 		<Modal
 			isOpen={isOpen}
 			onClose={onClose}
-			className="p-0 w-full max-h-[70vh] min-h-[300px] mb-20 flex flex-col"
+			className="p-0 w-full max-h-[60vh] min-h-[300px] mb-20 flex flex-col"
 			scrollable={false}
 			hideCloseButton={true}
 		>

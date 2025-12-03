@@ -81,6 +81,8 @@ const teacherNamesCache = new Map<number, string>();
  * @returns Pełne nazwisko lub null jeśli nie znaleziono
  */
 async function getTeacherFullName(teacherId: number): Promise<string | null> {
+  if (!teacherId) return null;
+
   // Sprawdź cache
   if (teacherNamesCache.has(teacherId)) {
     return teacherNamesCache.get(teacherId)!;

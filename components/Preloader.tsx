@@ -85,31 +85,67 @@ const Preloader: React.FC<PreloaderProps> = ({ onFinish }) => {
 					<Logo />
 				</div>
 
-				{/* 2. "Plan Zajęć" Text Draw */}
-				<div className="relative z-10">
-					<svg width="280" height="60" viewBox="0 0 280 60">
+				{/* 2. Handwritten Text Draw */}
+				<div className="relative z-10 mt-4">
+					<svg width="300" height="120" viewBox="0 0 300 120">
+						{/* Line 1: Plan zajęć (Handwritten) */}
 						<text
 							x="50%"
-							y="70%"
+							y="45%"
 							textAnchor="middle"
-							className="font-display font-bold text-4xl fill-transparent stroke-white"
-							strokeWidth="0.5"
+							className="font-cursive text-5xl fill-transparent stroke-white"
+							strokeWidth="1"
 							style={{
-								strokeDasharray: 400,
-								strokeDashoffset: 400,
-								animation: 'draw-path 1.5s ease-in-out 1s forwards',
+								strokeDasharray: 500,
+								strokeDashoffset: 500,
+								animation: 'draw-path 2s ease-in-out 1.5s forwards',
+								fontFamily: '"Dancing Script", cursive',
+								fontWeight: 100
 							}}>
-							UniSchedule
+							Plan zajęć
 						</text>
 						<text
 							x="50%"
-							y="70%"
+							y="45%"
 							textAnchor="middle"
-							className="font-display font-bold text-4xl fill-white stroke-none opacity-0"
+							className="font-cursive text-5xl fill-white stroke-none opacity-0"
 							style={{
-								animation: 'fadeIn 0.5s ease-out 2.2s forwards',
+								animation: 'fadeIn 0.5s ease-out 3s forwards',
+								fontFamily: '"Dancing Script", cursive',
+								fontWeight: 100
 							}}>
-							UniSchedule
+							Plan zajęć
+						</text>
+
+						{/* Line 2: UBB (Bold Block) */}
+						<text
+							x="50%"
+							y="85%"
+							textAnchor="middle"
+							className="text-4xl fill-transparent stroke-white"
+							strokeWidth="1"
+							style={{
+								strokeDasharray: 500,
+								strokeDashoffset: 500,
+								animation: 'draw-path 2s ease-in-out 2.0s forwards',
+								fontFamily: 'Arial, sans-serif',
+								fontWeight: 'bold',
+								letterSpacing: '0.1em'
+							}}>
+							UBB
+						</text>
+						<text
+							x="50%"
+							y="85%"
+							textAnchor="middle"
+							className="text-4xl fill-white stroke-none opacity-0"
+							style={{
+								animation: 'fadeIn 0.5s ease-out 3.5s forwards',
+								fontFamily: 'Arial, sans-serif',
+								fontWeight: 'bold',
+								letterSpacing: '0.1em'
+							}}>
+							UBB
 						</text>
 					</svg>
 				</div>

@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
 import { ClassEvent } from '../types'
 import { getCurrentTimeMinutes, getMinutesFromMidnight, getDayName, isSameDay } from '../utils'
@@ -461,12 +462,7 @@ const Home: React.FC = () => {
 	}
 	
 	const getClassBadgeColor = (type: string) => {
-		const t = type.toLowerCase()
-		if (t.includes('wykład')) return 'text-lecture bg-lecture/10 border-lecture/20'
-		if (t.includes('lab')) return 'text-lab bg-lab/10 border-lab/20'
-		if (t.includes('proj')) return 'text-project bg-project/10 border-project/20'
-		if (t.includes('sem')) return 'text-seminar bg-seminar/10 border-seminar/20'
-		return 'text-muted bg-background/50 border-border'
+		return 'text-white/90 bg-white/10 border-white/20'
 	}
 
 	const isTodayView = isSameDay(selectedDate, new Date())
@@ -517,8 +513,8 @@ const Home: React.FC = () => {
 					key={selectedDate.toISOString()}>
 					{isDemo ? (
 						<div className="flex flex-col items-center justify-center py-16 px-4 text-center border-2 border-dashed border-border rounded-3xl mx-auto max-w-[90vw] bg-surface/30 w-full relative overflow-hidden">
-							<div className="absolute top-0 right-0 w-24 h-24 rounded-full -mr-12 -mt-12 pointer-events-none opacity-5 bg-primary"></div>
-							<div className="absolute bottom-0 left-0 w-24 h-24 rounded-full -ml-12 -mb-12 pointer-events-none opacity-5 bg-primary"></div>
+							<div className="absolute -top-12 -right-12 w-32 h-32 rounded-full pointer-events-none opacity-20 bg-primary blur-3xl"></div>
+							<div className="absolute -bottom-12 -left-12 w-32 h-32 rounded-full pointer-events-none opacity-20 bg-primary blur-3xl"></div>
 
 							<h3 className="text-xl font-bold text-main mb-2 relative z-10">Nie masz jeszcze wybranej grupy</h3>
 							<p className="text-sm text-muted mb-6 max-w-[280px] relative z-10">
@@ -597,8 +593,8 @@ const Home: React.FC = () => {
 														isActive ? `shadow-2xl ${semanticBorder}` : 'border-border/50 shadow-md'
 													)}>
 													<div
-														className={`absolute top-0 right-0 w-20 h-20 bg-primary rounded-full -mr-10 -mt-10 pointer-events-none transition-opacity duration-300 ${
-															isActive ? 'opacity-10' : 'opacity-5'
+														className={`absolute -top-10 -right-10 w-32 h-32 bg-primary rounded-full pointer-events-none transition-opacity duration-300 blur-2xl ${
+															isActive ? 'opacity-20' : 'opacity-5'
 														}`}></div>
 
 													{isTodayView && (
@@ -671,7 +667,7 @@ const Home: React.FC = () => {
 											<div className="w-full px-1 mb-2">
 												<div className="bg-surface rounded-2xl p-5 border border-green-500/20 transition-all duration-300 flex flex-col relative overflow-hidden shadow-lg">
 													<div
-														className="absolute top-0 right-0 w-20 h-20 rounded-full -mr-10 -mt-10 pointer-events-none opacity-10"
+														className="absolute -top-10 -right-10 w-32 h-32 rounded-full pointer-events-none opacity-20 blur-2xl"
 														style={{ backgroundColor: 'rgb(34, 197, 94)' }}></div>
 
 													<div className="mb-3">
@@ -991,13 +987,14 @@ const Home: React.FC = () => {
 			)}
 
 			{/* Toast */}
-			{toast.show && (
-				<div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 animate-fade-in-up w-auto">
+			{toast.show && createPortal(
+				<div className="fixed top-6 left-1/2 -translate-x-1/2 z-[100] animate-fade-in-down w-auto">
 					<div className={`px-6 py-3 rounded-full shadow-xl flex items-center gap-3 border ${toast.type === 'success' ? 'bg-surface border-green-500/30 text-green-500' : 'bg-surface border-red-500/30 text-red-500'}`}>
 						{toast.type === 'success' ? <Check size={16} /> : <AlertCircle size={16} />}
 						<span className="text-sm font-bold">{toast.message}</span>
 					</div>
-				</div>
+				</div>,
+				document.body
 			)}
 
 			{/* Deans Office Modal */}

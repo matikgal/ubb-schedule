@@ -8,7 +8,7 @@ import { enhancedCacheManager, CACHE_TTL, CACHE_PRIORITY } from './enhancedCache
 const FACULTIES_KEY = 'cached_faculties'
 const MAJORS_KEY_PREFIX = 'cached_majors_'
 const GROUPS_KEY_PREFIX = 'cached_groups_'
-const TEACHERS_KEY_PREFIX = 'cached_teachers_'
+const TEACHERS_KEY_PREFIX = 'cached_teachers_v2_'
 
 /**
  * Pobiera unikalne wydziały - najpierw ze storage, potem z Supabase
