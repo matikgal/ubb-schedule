@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { ArrowLeft, User, GraduationCap } from 'lucide-react'
+import { ArrowLeft, User, GraduationCap, Mail, Phone, MapPin } from 'lucide-react'
 import { ClassEvent } from '../types'
 import { fetchScheduleForWeek, getAvailableWeeks, getCurrentWeekId } from '../services/scheduleService'
 import ScheduleViewer from './ScheduleViewer'
@@ -8,10 +8,13 @@ interface LecturerProfileProps {
 	teacherId: number
 	teacherName: string
 	faculty: string
+	email?: string | null
+	phone?: string | null
+	office?: string | null
 	onBack: () => void
 }
 
-const LecturerProfile: React.FC<LecturerProfileProps> = ({ teacherId, teacherName, faculty, onBack }) => {
+const LecturerProfile: React.FC<LecturerProfileProps> = ({ teacherId, teacherName, faculty, email, phone, office, onBack }) => {
 	const [events, setEvents] = useState<ClassEvent[]>([])
 	const [currentWeekId, setCurrentWeekId] = useState<string | null>(null)
 	const [availableWeeks, setAvailableWeeks] = useState<Array<{ id: string; label: string; start: Date; end: Date }>>([])
@@ -105,18 +108,42 @@ const LecturerProfile: React.FC<LecturerProfileProps> = ({ teacherId, teacherNam
 	return (
 		<div className="animate-fade-in space-y-6">
 			{/* Header with Back Button */}
-			<div className="flex items-center gap-4">
+			<div className="flex items-start gap-4">
 				<button 
 					onClick={onBack}
-					className="p-2 -ml-2 hover:bg-hover rounded-full transition-colors"
+					className="p-2 -ml-2 hover:bg-hover rounded-full transition-colors mt-1"
 				>
 					<ArrowLeft size={24} className="text-main" />
 				</button>
-				<div>
-					<h1 className="text-2xl font-display font-bold text-main leading-tight">{teacherName}</h1>
-					<div className="flex items-center gap-2 text-sm text-muted">
-						<GraduationCap size={16} />
-						<span>{faculty}</span>
+				<div className="space-y-2">
+					<div>
+						<h1 className="text-2xl font-display font-bold text-main leading-tight">{teacherName}</h1>
+						<div className="flex items-center gap-2 text-sm text-muted mt-1">
+							<GraduationCap size={16} />
+							<span>{faculty}</span>
+						</div>
+					</div>
+
+					{/* Contact Info */}
+					<div className="flex flex-col gap-1.5 pt-1">
+						{email && (
+							<div className="flex items-center gap-2 text-sm text-main">
+								<Mail size={14} className="text-primary" />
+								<a href={`mailto:${email}`} className="hover:text-primary transition-colors">{email}</a>
+							</div>
+						)}
+						{phone && (
+							<div className="flex items-center gap-2 text-sm text-main">
+								<Phone size={14} className="text-primary" />
+								<a href={`tel:${phone}`} className="hover:text-primary transition-colors">{phone}</a>
+							</div>
+						)}
+						{office && (
+							<div className="flex items-center gap-2 text-sm text-main">
+								<MapPin size={14} className="text-primary" />
+								<span>{office}</span>
+							</div>
+						)}
 					</div>
 				</div>
 			</div>

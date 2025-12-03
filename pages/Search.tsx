@@ -187,6 +187,9 @@ const SearchPage: React.FC = () => {
 					teacherId={selectedLecturer.id}
 					teacherName={selectedLecturer.name}
 					faculty={selectedLecturer.faculty}
+					email={selectedLecturer.email}
+					phone={selectedLecturer.phone}
+					office={selectedLecturer.office}
 					onBack={() => setSelectedLecturer(null)}
 				/>
 			</div>

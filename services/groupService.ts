@@ -335,7 +335,7 @@ export async function fetchTeachersForFaculty(faculty: string): Promise<GroupInf
 
 		const { data, error } = await supabase
 			.from('teacher_schedules')
-			.select('teacher_id, teacher_name, faculty, weeks_count')
+			.select('teacher_id, teacher_name, faculty, weeks_count, email, phone, office')
 			.eq('faculty', faculty)
 
 		console.log('Supabase response (teachers):', { data, error, count: data?.length })
@@ -354,6 +354,9 @@ export async function fetchTeachersForFaculty(faculty: string): Promise<GroupInf
 			faculty: row.faculty,
 			weeksCount: row.weeks_count,
 			type: 'teacher',
+			email: row.email,
+			phone: row.phone,
+			office: row.office,
 		}))
 
 		// Sort alphabetically
@@ -386,7 +389,7 @@ async function updateTeachersInBackground(faculty: string): Promise<void> {
 
 		const { data, error } = await supabase
 			.from('teacher_schedules')
-			.select('teacher_id, teacher_name, faculty, weeks_count')
+			.select('teacher_id, teacher_name, faculty, weeks_count, email, phone, office')
 			.eq('faculty', faculty)
 
 		if (!error && data) {
@@ -396,6 +399,9 @@ async function updateTeachersInBackground(faculty: string): Promise<void> {
 				faculty: row.faculty,
 				weeksCount: row.weeks_count,
 				type: 'teacher',
+				email: row.email,
+				phone: row.phone,
+				office: row.office,
 			}))
 
 			teachers.sort((a, b) => a.name.localeCompare(b.name))
@@ -437,7 +443,7 @@ export async function fetchAllTeachers(): Promise<GroupInfo[]> {
 
 		const { data, error } = await supabase
 			.from('teacher_schedules')
-			.select('teacher_id, teacher_name, faculty, weeks_count')
+			.select('teacher_id, teacher_name, faculty, weeks_count, email, phone, office')
 
 		console.log('📊 Supabase response (all teachers):', { data, error, count: data?.length })
 
@@ -455,6 +461,9 @@ export async function fetchAllTeachers(): Promise<GroupInfo[]> {
 			faculty: row.faculty,
 			weeksCount: row.weeks_count,
 			type: 'teacher',
+			email: row.email,
+			phone: row.phone,
+			office: row.office,
 		}))
 
 		// Sort alphabetically
@@ -487,7 +496,7 @@ async function updateAllTeachersInBackground(): Promise<void> {
 
 		const { data, error } = await supabase
 			.from('teacher_schedules')
-			.select('teacher_id, teacher_name, faculty, weeks_count')
+			.select('teacher_id, teacher_name, faculty, weeks_count, email, phone, office')
 
 		if (!error && data) {
 			const teachers: GroupInfo[] = data.map(row => ({
@@ -496,6 +505,9 @@ async function updateAllTeachersInBackground(): Promise<void> {
 				faculty: row.faculty,
 				weeksCount: row.weeks_count,
 				type: 'teacher',
+				email: row.email,
+				phone: row.phone,
+				office: row.office,
 			}))
 
 			teachers.sort((a, b) => a.name.localeCompare(b.name))

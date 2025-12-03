@@ -22,6 +22,9 @@ export interface GroupInfo {
   weeksCount: number; // Number of weeks in schedule
   semester?: number; // Optional for backward compatibility
   type?: 'group' | 'teacher'; // Discriminator, optional for backward compatibility (default: group)
+  email?: string | null;
+  phone?: string | null;
+  office?: string | null;
 }
 
 export interface SearchFilters {
@@ -65,6 +68,9 @@ export interface SupabaseTeacherScheduleRow {
   weeks_count: number;
   data: ScheduleData;
   updated_at: string;
+  email?: string | null;
+  phone?: string | null;
+  office?: string | null;
 }
 
 export interface ScheduleData {
