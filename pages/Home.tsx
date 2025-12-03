@@ -29,8 +29,9 @@ import './Home.css'
 import clsx from 'clsx'
 
 // Widgets
-import WeatherWidget from '../components/widgets/WeatherWidget'
-import CalculatorWidget from '../components/widgets/CalculatorWidget'
+import CampusMapWidget from '../components/widgets/CampusMapWidget'
+import DeansOfficeWidget from '../components/widgets/DeansOfficeWidget'
+import DeansOfficeModal from '../components/DeansOfficeModal'
 import NewsWidget from '../components/widgets/NewsWidget'
 
 // --- Types ---
@@ -79,6 +80,7 @@ const Home: React.FC = () => {
 	const [isArchiveOpen, setIsArchiveOpen] = useState(false)
 	const [newDeadlineTitle, setNewDeadlineTitle] = useState('')
 	const [newDeadlineDate, setNewDeadlineDate] = useState('')
+	const [isDeansOfficeModalOpen, setIsDeansOfficeModalOpen] = useState(false)
 
 	const [toast, setToast] = useState<ToastState>({ show: false, message: '', type: 'success' })
 	const [confirmDialog, setConfirmDialog] = useState<ConfirmState>({ isOpen: false, title: '', message: '' })
@@ -816,14 +818,14 @@ const Home: React.FC = () => {
 				</div>
 				
 				<div className="grid grid-cols-2 gap-3 h-40">
-					{/* Weather Widget */}
+					{/* Campus Map Widget */}
 					<div className="col-span-1 h-full">
-						<WeatherWidget />
+						<CampusMapWidget />
 					</div>
 					
-					{/* Calculator Widget (Replaces Quote) */}
+					{/* Deans Office Widget (Replaces Calculator) */}
 					<div className="col-span-1 h-full">
-						<CalculatorWidget />
+						<DeansOfficeWidget onClick={() => setIsDeansOfficeModalOpen(true)} />
 					</div>
 				</div>
 
@@ -997,6 +999,12 @@ const Home: React.FC = () => {
 					</div>
 				</div>
 			)}
+
+			{/* Deans Office Modal */}
+			<DeansOfficeModal
+				isOpen={isDeansOfficeModalOpen}
+				onClose={() => setIsDeansOfficeModalOpen(false)}
+			/>
 
 			<GroupSelectorModal
 				isOpen={isGroupSelectorOpen}

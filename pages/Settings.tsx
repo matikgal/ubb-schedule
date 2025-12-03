@@ -108,15 +108,13 @@ const SettingsPage = () => {
 	const handleSendContact = () => {
 		if (!contactMessage.trim()) return
 
-		setIsSending(true)
-		
-		// Simulate sending
-		setTimeout(() => {
-			setIsSending(false)
-			setIsContactModalOpen(false)
-			setContactMessage('')
-			alert('Dziękujemy za wiadomość! Odpowiemy najszybciej jak to możliwe.')
-		}, 1500)
+		const subject = contactType === 'bug' ? 'Zgłoszenie błędu - UniSchedule' : 'Pomysł na funkcję - UniSchedule'
+		const body = encodeURIComponent(contactMessage)
+		const mailtoLink = `mailto:twoj-email@example.com?subject=${encodeURIComponent(subject)}&body=${body}`
+
+		window.location.href = mailtoLink
+		setIsContactModalOpen(false)
+		setContactMessage('')
 	}
 
 	return (
@@ -356,7 +354,7 @@ const SettingsPage = () => {
 				onClick={() => setIsContactModalOpen(true)}
 				className="w-full py-3.5 rounded-xl border border-primary/20 bg-primary/5 text-primary text-sm font-bold flex items-center justify-center gap-2 hover:bg-primary/10 transition-colors">
 				<MessageSquare size={16} />
-				Zgłoś błąd / Współpraca
+				Zgłoś błąd / Kontakt
 			</button>
 
 			<div className="text-center space-y-3 pt-4 pb-2 border-t border-border">
@@ -407,10 +405,10 @@ const SettingsPage = () => {
 			>
 				<div className="space-y-4">
 					<p className="text-sm text-muted">
-						Masz pomysł na nową funkcję? Znalazłeś błąd? A może chcesz dołączyć do zespołu? Napisz do nas!
+						Masz pomysł na nową funkcję? Znalazłeś błąd? Napisz do nas!
 					</p>
 
-					<div className="grid grid-cols-3 gap-2">
+					<div className="grid grid-cols-2 gap-2">
 						<button
 							onClick={() => setContactType('bug')}
 							className={`p-2 rounded-xl text-xs font-bold border transition-all ${
@@ -431,16 +429,6 @@ const SettingsPage = () => {
 						>
 							Pomysł
 						</button>
-						<button
-							onClick={() => setContactType('collab')}
-							className={`p-2 rounded-xl text-xs font-bold border transition-all ${
-								contactType === 'collab' 
-									? 'bg-blue-500/10 border-blue-500 text-blue-500' 
-									: 'bg-background border-border text-muted hover:border-blue-500/50'
-							}`}
-						>
-							Współpraca
-						</button>
 					</div>
 
 					<div className="space-y-2">
@@ -455,17 +443,11 @@ const SettingsPage = () => {
 
 					<button
 						onClick={handleSendContact}
-						disabled={!contactMessage.trim() || isSending}
+						disabled={!contactMessage.trim()}
 						className="w-full py-3 rounded-xl bg-primary text-black font-bold text-sm flex items-center justify-center gap-2 hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
 					>
-						{isSending ? (
-							<div className="w-5 h-5 border-2 border-black/30 border-t-black rounded-full animate-spin" />
-						) : (
-							<>
-								<Send size={16} />
-								Wyślij
-							</>
-						)}
+						<Send size={16} />
+						Wyślij
 					</button>
 				</div>
 			</Modal>

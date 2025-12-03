@@ -114,15 +114,21 @@ const GroupSelectorModal: React.FC<GroupSelectorModalProps> = ({ isOpen, onClose
 		}
 	}
 
-	const handleNext = async () => {
-		if (!tempSelection) return
+	const handleSelection = async (value: any) => {
+		setTempSelection(value)
 
+		// For final steps, just select (don't auto-advance)
+		if (currentStep === 'group' || currentStep === 'allTeachers') {
+			return
+		}
+
+		// Auto-advance for intermediate steps
 		if (currentStep === 'role') {
-			const role = tempSelection as 'student' | 'teacher'
+			const role = value as 'student' | 'teacher'
 			setSelectedRole(role)
 			setCurrentStep(role === 'student' ? 'faculty' : 'allTeachers')
 		} else if (currentStep === 'faculty') {
-			const faculty = tempSelection as string
+			const faculty = value as string
 			setSelectedFaculty(faculty)
 			setLoading(true)
 			try {
@@ -135,13 +141,13 @@ const GroupSelectorModal: React.FC<GroupSelectorModalProps> = ({ isOpen, onClose
 				setLoading(false)
 			}
 		} else if (currentStep === 'major') {
-			setSelectedMajor(tempSelection as string)
+			setSelectedMajor(value as string)
 			setCurrentStep('studyType')
 		} else if (currentStep === 'studyType') {
-			setSelectedStudyType(tempSelection as string)
+			setSelectedStudyType(value as string)
 			setCurrentStep('semester')
 		} else if (currentStep === 'semester') {
-			const semester = tempSelection as number
+			const semester = value as number
 			setSelectedSemester(semester)
 			setLoading(true)
 			try {
@@ -153,7 +159,13 @@ const GroupSelectorModal: React.FC<GroupSelectorModalProps> = ({ isOpen, onClose
 			} finally {
 				setLoading(false)
 			}
-		} else if (currentStep === 'group' || currentStep === 'allTeachers') {
+		}
+	}
+
+	const handleConfirm = async () => {
+		if (!tempSelection) return
+
+		if (currentStep === 'group' || currentStep === 'allTeachers') {
 			const group = tempSelection as GroupInfo
 			setSelectedGroup(group)
 			try {
@@ -231,26 +243,26 @@ const GroupSelectorModal: React.FC<GroupSelectorModalProps> = ({ isOpen, onClose
 			</div>
 
 			{/* Content - Scrollable */}
-			<div className="flex-1 overflow-y-auto p-6 overscroll-contain relative">
+			<div className="flex-1 overflow-y-auto overscroll-contain relative">
 				{error && (
-					<div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-500 text-sm">
+					<div className="mx-6 mt-6 mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-500 text-sm">
 						{error}
 					</div>
 				)}
 
 				{loading ? (
-					<div className="space-y-3">
+					<div className="space-y-3 p-6">
 						{[1, 2, 3, 4].map(i => (
 							<div key={i} className="h-14 rounded-xl skeleton-shimmer" style={{ animationDelay: `${i * 100}ms` }} />
 						))}
 					</div>
 				) : (
-					<div className="space-y-2 pb-4">
+					<div className={`space-y-2 pb-4 ${currentStep === 'allTeachers' ? '' : 'p-6'}`}>
 						{/* Role Selection */}
 						{currentStep === 'role' && (
 							<div className="space-y-3">
 								<button
-									onClick={() => setTempSelection('student')}
+									onClick={() => handleSelection('student')}
 									className={`w-full p-6 border rounded-2xl text-left transition-all group flex items-center justify-between ${
 										isSelected('student') ? 'bg-primary/10 border-primary' : 'bg-background hover:bg-hover border-border'
 									}`}>
@@ -261,7 +273,7 @@ const GroupSelectorModal: React.FC<GroupSelectorModalProps> = ({ isOpen, onClose
 									{isSelected('student') && <Check size={24} className="text-primary" />}
 								</button>
 								<button
-									onClick={() => setTempSelection('teacher')}
+									onClick={() => handleSelection('teacher')}
 									className={`w-full p-6 border rounded-2xl text-left transition-all group flex items-center justify-between ${
 										isSelected('teacher') ? 'bg-primary/10 border-primary' : 'bg-background hover:bg-hover border-border'
 									}`}>
@@ -279,7 +291,7 @@ const GroupSelectorModal: React.FC<GroupSelectorModalProps> = ({ isOpen, onClose
 							faculties.map(faculty => (
 								<button
 									key={faculty}
-									onClick={() => setTempSelection(faculty)}
+									onClick={() => handleSelection(faculty)}
 									className={`w-full p-4 border rounded-xl text-left transition-all flex items-center justify-between ${
 										isSelected(faculty) ? 'bg-primary/10 border-primary' : 'bg-background hover:bg-hover border-border'
 									}`}>
@@ -293,7 +305,7 @@ const GroupSelectorModal: React.FC<GroupSelectorModalProps> = ({ isOpen, onClose
 							majors.map(major => (
 								<button
 									key={major}
-									onClick={() => setTempSelection(major)}
+									onClick={() => handleSelection(major)}
 									className={`w-full p-4 border rounded-xl text-left transition-all flex items-center justify-between ${
 										isSelected(major) ? 'bg-primary/10 border-primary' : 'bg-background hover:bg-hover border-border'
 									}`}>
@@ -307,7 +319,7 @@ const GroupSelectorModal: React.FC<GroupSelectorModalProps> = ({ isOpen, onClose
 							studyTypes.map(type => (
 								<button
 									key={type.value}
-									onClick={() => setTempSelection(type.value)}
+									onClick={() => handleSelection(type.value)}
 									className={`w-full p-4 border rounded-xl text-left transition-all flex items-center justify-between ${
 										isSelected(type.value) ? 'bg-primary/10 border-primary' : 'bg-background hover:bg-hover border-border'
 									}`}>
@@ -321,7 +333,7 @@ const GroupSelectorModal: React.FC<GroupSelectorModalProps> = ({ isOpen, onClose
 							semesters.map(sem => (
 								<button
 									key={sem}
-									onClick={() => setTempSelection(sem)}
+									onClick={() => handleSelection(sem)}
 									className={`w-full p-4 border rounded-xl text-left transition-all flex items-center justify-between ${
 										isSelected(sem) ? 'bg-primary/10 border-primary' : 'bg-background hover:bg-hover border-border'
 									}`}>
@@ -338,7 +350,7 @@ const GroupSelectorModal: React.FC<GroupSelectorModalProps> = ({ isOpen, onClose
 							groups.map(group => (
 								<button
 									key={group.id}
-									onClick={() => setTempSelection(group)}
+									onClick={() => handleSelection(group)}
 									className={`w-full p-4 border rounded-xl text-left transition-all flex items-center justify-between ${
 										isSelected(group) ? 'bg-primary/10 border-primary' : 'bg-background hover:bg-hover border-border'
 									}`}>
@@ -350,7 +362,7 @@ const GroupSelectorModal: React.FC<GroupSelectorModalProps> = ({ isOpen, onClose
 						{/* All Teachers */}
 						{currentStep === 'allTeachers' && (
 							<>
-								<div className="sticky top-0 bg-surface z-10 py-2 mb-2">
+								<div className="sticky top-0 bg-surface z-10 px-6 pt-6 pb-2 mb-2">
 									<input
 										type="text"
 										placeholder="Szukaj wykładowcy..."
@@ -361,26 +373,28 @@ const GroupSelectorModal: React.FC<GroupSelectorModalProps> = ({ isOpen, onClose
 									/>
 								</div>
 
-								{filteredTeachers.length === 0 ? (
-									<div className="text-center py-8 text-muted">
-										{searchTerm ? 'Nie znaleziono wykładowcy' : 'Brak dostępnych wykładowców'}
-									</div>
-								) : (
-									filteredTeachers.map(teacher => (
-										<button
-											key={teacher.id}
-											onClick={() => setTempSelection(teacher)}
-											className={`w-full p-4 border rounded-xl text-left transition-all flex items-center justify-between ${
-												isSelected(teacher) ? 'bg-primary/10 border-primary' : 'bg-background hover:bg-hover border-border'
-											}`}>
-											<div>
-												<span className={`font-medium block ${isSelected(teacher) ? 'text-primary' : 'text-main'}`}>{teacher.name}</span>
-												<span className="text-[10px] text-muted">{teacher.faculty}</span>
-											</div>
-											{isSelected(teacher) && <Check size={18} className="text-primary" />}
-										</button>
-									))
-								)}
+								<div className="px-6 space-y-2">
+									{filteredTeachers.length === 0 ? (
+										<div className="text-center py-8 text-muted">
+											{searchTerm ? 'Nie znaleziono wykładowcy' : 'Brak dostępnych wykładowców'}
+										</div>
+									) : (
+										filteredTeachers.map(teacher => (
+											<button
+												key={teacher.id}
+												onClick={() => handleSelection(teacher)}
+												className={`w-full p-4 border rounded-xl text-left transition-all flex items-center justify-between ${
+													isSelected(teacher) ? 'bg-primary/10 border-primary' : 'bg-background hover:bg-hover border-border'
+												}`}>
+												<div>
+													<span className={`font-medium block ${isSelected(teacher) ? 'text-primary' : 'text-main'}`}>{teacher.name}</span>
+													<span className="text-[10px] text-muted">{teacher.faculty}</span>
+												</div>
+												{isSelected(teacher) && <Check size={18} className="text-primary" />}
+											</button>
+										))
+									)}
+								</div>
 							</>
 						)}
 					</div>
@@ -397,17 +411,19 @@ const GroupSelectorModal: React.FC<GroupSelectorModalProps> = ({ isOpen, onClose
 						Wstecz
 					</button>
 				)}
-				<button
-					onClick={handleNext}
-					disabled={!tempSelection}
-					className={`flex-1 py-3 px-4 rounded-xl font-bold transition-all border-2 ${
-						tempSelection
-							? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-600/25 hover:bg-blue-700'
-							: 'bg-transparent border-border text-muted cursor-not-allowed'
-					}`}
-				>
-					{currentStep === 'group' || currentStep === 'allTeachers' ? 'Zatwierdź' : 'Dalej'}
-				</button>
+				{(currentStep === 'group' || currentStep === 'allTeachers') && (
+					<button
+						onClick={handleConfirm}
+						disabled={!tempSelection}
+						className={`flex-1 py-3 px-4 rounded-xl font-bold transition-all border-2 ${
+							tempSelection
+								? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-600/25 hover:bg-blue-700'
+								: 'bg-transparent border-border text-muted cursor-not-allowed'
+						}`}
+					>
+						Zatwierdź
+					</button>
+				)}
 			</div>
 		</Modal>
 	)

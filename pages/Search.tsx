@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Search as SearchIcon, ArrowRight } from 'lucide-react'
+import { Search as SearchIcon, ArrowRight, User, ChevronRight, GraduationCap } from 'lucide-react'
 import Toast from '../components/Toast'
 import OfflineBadge from '../components/OfflineBadge'
-import { fetchFaculties, fetchMajorsForFaculty, fetchGroupsForMajor, saveSelectedGroup } from '../services/groupService'
+import { fetchFaculties, fetchMajorsForFaculty, fetchGroupsForMajor, saveSelectedGroup, fetchAllTeachers } from '../services/groupService'
 import { GroupInfo } from '../types'
 import { ERROR_MESSAGES } from '../constants/errorMessages'
 import { useOnlineStatus } from '../hooks/useOnlineStatus'
+import LecturerProfile from '../components/LecturerProfile'
 
 interface SelectionPillProps {
 	label: string
@@ -28,6 +29,13 @@ const SearchPage: React.FC = () => {
 	const navigate = useNavigate()
 	const isOnline = useOnlineStatus()
 
+	// --- Search State ---
+	const [searchQuery, setSearchQuery] = useState('')
+	const [allTeachers, setAllTeachers] = useState<GroupInfo[]>([])
+	const [searchResults, setSearchResults] = useState<GroupInfo[]>([])
+	const [selectedLecturer, setSelectedLecturer] = useState<GroupInfo | null>(null)
+
+	// --- Filter State ---
 	const [selectedFaculty, setSelectedFaculty] = useState<string>('')
 	const [selectedField, setSelectedField] = useState<string>('')
 	const [selectedStudyType, setSelectedStudyType] = useState<string>('')
@@ -55,6 +63,31 @@ const SearchPage: React.FC = () => {
 
 	// Semestry (1-7 dla studiów inżynierskich)
 	const semesters = [1, 2, 3, 4, 5, 6, 7]
+
+	// Load all teachers on mount
+	useEffect(() => {
+		const loadTeachers = async () => {
+			try {
+				const teachers = await fetchAllTeachers()
+				setAllTeachers(teachers)
+			} catch (err) {
+				console.error('Failed to load teachers for search:', err)
+			}
+		}
+		loadTeachers()
+	}, [])
+
+	// Filter teachers based on search query
+	useEffect(() => {
+		if (!searchQuery.trim()) {
+			setSearchResults([])
+			return
+		}
+
+		const query = searchQuery.toLowerCase()
+		const results = allTeachers.filter(t => t.name.toLowerCase().includes(query))
+		setSearchResults(results)
+	}, [searchQuery, allTeachers])
 
 	// Pobierz wydziały przy montowaniu komponentu
 	useEffect(() => {
@@ -146,6 +179,20 @@ const SearchPage: React.FC = () => {
 		}
 	}
 
+	// If a lecturer is selected, show their profile
+	if (selectedLecturer) {
+		return (
+			<div className="pt-6">
+				<LecturerProfile
+					teacherId={selectedLecturer.id}
+					teacherName={selectedLecturer.name}
+					faculty={selectedLecturer.faculty}
+					onBack={() => setSelectedLecturer(null)}
+				/>
+			</div>
+		)
+	}
+
 	return (
 		<div className="space-y-10 animate-fade-in pt-6">
 			{/* Offline Badge */}
@@ -153,19 +200,53 @@ const SearchPage: React.FC = () => {
 
 			<div>
 				<h1 className="text-3xl font-display font-bold text-main mb-2">Znajdź plan</h1>
-				<p className="text-muted text-sm">Wybierz swoją grupę zajęciową.</p>
 			</div>
 
-			{/* Minimal Search Input */}
-			<div className="bg-surface rounded-xl flex items-center p-1 border border-border focus-within:border-primary/50 transition-colors">
-				<div className="p-3 text-muted">
-					<SearchIcon size={20} />
+			{/* Search Input */}
+			<div className="space-y-4">
+				<div className="bg-surface rounded-xl flex items-center p-1 border border-border focus-within:border-primary/50 transition-colors">
+					<div className="p-3 text-muted">
+						<SearchIcon size={20} />
+					</div>
+					<input
+						type="text"
+						value={searchQuery}
+						onChange={e => setSearchQuery(e.target.value)}
+						placeholder="Szukaj wykładowcy..."
+						className="w-full p-2 outline-none text-main bg-transparent placeholder:text-muted text-sm"
+					/>
 				</div>
-				<input
-					type="text"
-					placeholder="Szukaj sali lub wykładowcy..."
-					className="w-full p-2 outline-none text-main bg-transparent placeholder:text-muted text-sm"
-				/>
+
+				{/* Search Results */}
+				{searchQuery && (
+					<div className="space-y-2 animate-fade-in">
+						{searchResults.length > 0 ? (
+							searchResults.map(teacher => (
+								<button
+									key={teacher.id}
+									onClick={() => setSelectedLecturer(teacher)}
+									className="w-full p-4 bg-surface border border-border rounded-xl flex items-center justify-between hover:border-primary/50 transition-all group text-left"
+								>
+									<div className="flex items-center gap-3">
+										<div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+											<User size={20} />
+										</div>
+										<div>
+											<h4 className="font-bold text-main text-sm">{teacher.name}</h4>
+											<div className="flex items-center gap-1.5 text-xs text-muted mt-0.5">
+												<GraduationCap size={12} />
+												<span>{teacher.faculty}</span>
+											</div>
+										</div>
+									</div>
+									<ChevronRight size={18} className="text-muted group-hover:text-primary transition-colors" />
+								</button>
+							))
+						) : (
+							<p className="text-center text-muted text-sm py-4">Brak wyników wyszukiwania</p>
+						)}
+					</div>
+				)}
 			</div>
 
 			{/* Toast Notification */}
@@ -175,62 +256,37 @@ const SearchPage: React.FC = () => {
 				</div>
 			)}
 
-			{/* Filter Flow */}
-			<div className="space-y-8">
-				<div className="space-y-3">
-					<h3 className="text-xs font-bold text-muted uppercase tracking-wide ml-1">Wydział</h3>
-					{loadingFaculties ? (
-						<div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar">
-							{[1, 2, 3, 4].map(i => (
-								<div
-									key={i}
-									className="px-5 py-2.5 rounded-full border border-border h-9 w-32 skeleton-shimmer"
-									style={{ animationDelay: `${i * 100}ms` }}
-								/>
-							))}
-						</div>
-					) : (
-						<div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar animate-fade-in">
-							{faculties.map(f => (
-								<SelectionPill
-									key={f}
-									label={f}
-									active={selectedFaculty === f}
-									onClick={() => {
-										setSelectedFaculty(f)
-										setSelectedField('')
-										setSelectedStudyType('')
-										setSelectedSemester(null)
-										setSelectedGroup(null)
-									}}
-								/>
-							))}
-						</div>
-					)}
-				</div>
+			{/* Filter Flow (Only show if not searching) */}
+			{!searchQuery && (
+				<div className="space-y-8 animate-fade-in">
+					<div className="flex items-center gap-4">
+						<div className="h-[1px] flex-1 bg-border"></div>
+						<span className="text-xs font-bold text-muted uppercase">LUB WYBIERZ GRUPĘ</span>
+						<div className="h-[1px] flex-1 bg-border"></div>
+					</div>
 
-				{selectedFaculty && (
-					<div className="space-y-3 animate-slide-up">
-						<h3 className="text-xs font-bold text-muted uppercase tracking-wide ml-1">Kierunek</h3>
-						{loadingFields ? (
+					<div className="space-y-3">
+						<h3 className="text-xs font-bold text-muted uppercase tracking-wide ml-1">Wydział</h3>
+						{loadingFaculties ? (
 							<div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar">
-								{[1, 2, 3].map(i => (
+								{[1, 2, 3, 4].map(i => (
 									<div
 										key={i}
-										className="px-5 py-2.5 rounded-full border border-border h-9 w-40 skeleton-shimmer"
+										className="px-5 py-2.5 rounded-full border border-border h-9 w-32 skeleton-shimmer"
 										style={{ animationDelay: `${i * 100}ms` }}
 									/>
 								))}
 							</div>
 						) : (
 							<div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar animate-fade-in">
-								{fields.map(f => (
+								{faculties.map(f => (
 									<SelectionPill
 										key={f}
 										label={f}
-										active={selectedField === f}
+										active={selectedFaculty === f}
 										onClick={() => {
-											setSelectedField(f)
+											setSelectedFaculty(f)
+											setSelectedField('')
 											setSelectedStudyType('')
 											setSelectedSemester(null)
 											setSelectedGroup(null)
@@ -240,80 +296,113 @@ const SearchPage: React.FC = () => {
 							</div>
 						)}
 					</div>
-				)}
 
-				{selectedField && (
-					<div className="space-y-3 animate-slide-up">
-						<h3 className="text-xs font-bold text-muted uppercase tracking-wide ml-1">Tryb studiów</h3>
-						<div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar">
-							{studyTypes.map(type => (
-								<SelectionPill
-									key={type}
-									label={type}
-									active={selectedStudyType === type}
-									onClick={() => {
-										setSelectedStudyType(type)
-										setSelectedSemester(null)
-										setSelectedGroup(null)
-									}}
-								/>
-							))}
+					{selectedFaculty && (
+						<div className="space-y-3 animate-slide-up">
+							<h3 className="text-xs font-bold text-muted uppercase tracking-wide ml-1">Kierunek</h3>
+							{loadingFields ? (
+								<div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar">
+									{[1, 2, 3].map(i => (
+										<div
+											key={i}
+											className="px-5 py-2.5 rounded-full border border-border h-9 w-40 skeleton-shimmer"
+											style={{ animationDelay: `${i * 100}ms` }}
+										/>
+									))}
+								</div>
+							) : (
+								<div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar animate-fade-in">
+									{fields.map(f => (
+										<SelectionPill
+											key={f}
+											label={f}
+											active={selectedField === f}
+											onClick={() => {
+												setSelectedField(f)
+												setSelectedStudyType('')
+												setSelectedSemester(null)
+												setSelectedGroup(null)
+											}}
+										/>
+									))}
+								</div>
+							)}
 						</div>
-					</div>
-				)}
+					)}
 
-				{selectedStudyType && (
-					<div className="space-y-3 animate-slide-up">
-						<h3 className="text-xs font-bold text-muted uppercase tracking-wide ml-1">Semestr</h3>
-						<div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar">
-							{semesters.map(sem => (
-								<SelectionPill
-									key={sem}
-									label={`${sem}`}
-									active={selectedSemester === sem}
-									onClick={() => {
-										setSelectedSemester(sem)
-										setSelectedGroup(null)
-									}}
-								/>
-							))}
-						</div>
-					</div>
-				)}
-
-				{selectedSemester && (
-					<div className="space-y-3 animate-slide-up">
-						<h3 className="text-xs font-bold text-muted uppercase tracking-wide ml-1">Grupa</h3>
-						{loadingGroups ? (
+					{selectedField && (
+						<div className="space-y-3 animate-slide-up">
+							<h3 className="text-xs font-bold text-muted uppercase tracking-wide ml-1">Tryb studiów</h3>
 							<div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar">
-								{[1, 2, 3, 4].map(i => (
-									<div
-										key={i}
-										className="px-5 py-2.5 rounded-full border border-border h-9 w-24 skeleton-shimmer"
-										style={{ animationDelay: `${i * 100}ms` }}
-									/>
-								))}
-							</div>
-						) : groups.length === 0 ? (
-							<p className="text-muted text-sm ml-1 animate-fade-in">Brak dostępnych grup dla wybranej kombinacji.</p>
-						) : (
-							<div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar animate-fade-in">
-								{groups.map(g => (
+								{studyTypes.map(type => (
 									<SelectionPill
-										key={g.id}
-										label={g.name}
-										active={selectedGroup?.id === g.id}
-										onClick={() => setSelectedGroup(g)}
+										key={type}
+										label={type}
+										active={selectedStudyType === type}
+										onClick={() => {
+											setSelectedStudyType(type)
+											setSelectedSemester(null)
+											setSelectedGroup(null)
+										}}
 									/>
 								))}
 							</div>
-						)}
-					</div>
-				)}
-			</div>
+						</div>
+					)}
+
+					{selectedStudyType && (
+						<div className="space-y-3 animate-slide-up">
+							<h3 className="text-xs font-bold text-muted uppercase tracking-wide ml-1">Semestr</h3>
+							<div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar">
+								{semesters.map(sem => (
+									<SelectionPill
+										key={sem}
+										label={`${sem}`}
+										active={selectedSemester === sem}
+										onClick={() => {
+											setSelectedSemester(sem)
+											setSelectedGroup(null)
+										}}
+									/>
+								))}
+							</div>
+						</div>
+					)}
+
+					{selectedSemester && (
+						<div className="space-y-3 animate-slide-up">
+							<h3 className="text-xs font-bold text-muted uppercase tracking-wide ml-1">Grupa</h3>
+							{loadingGroups ? (
+								<div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar">
+									{[1, 2, 3, 4].map(i => (
+										<div
+											key={i}
+											className="px-5 py-2.5 rounded-full border border-border h-9 w-24 skeleton-shimmer"
+											style={{ animationDelay: `${i * 100}ms` }}
+										/>
+									))}
+								</div>
+							) : groups.length === 0 ? (
+								<p className="text-muted text-sm ml-1 animate-fade-in">Brak dostępnych grup dla wybranej kombinacji.</p>
+							) : (
+								<div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar animate-fade-in">
+									{groups.map(g => (
+										<SelectionPill
+											key={g.id}
+											label={g.name}
+											active={selectedGroup?.id === g.id}
+											onClick={() => setSelectedGroup(g)}
+										/>
+									))}
+								</div>
+							)}
+						</div>
+					)}
+				</div>
+			)}
 
 			{/* Save Button */}
-			{selectedGroup && (
+			{selectedGroup && !searchQuery && (
 				<div className="fixed bottom-24 left-0 right-0 px-6 flex justify-center animate-bounce-in z-30">
 					<button
 						onClick={handleSave}
