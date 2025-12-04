@@ -1,6 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react'
 import { createPortal } from 'react-dom'
-import { Link } from 'react-router-dom'
 import { ClassEvent } from '../types'
 import { getCurrentTimeMinutes, getMinutesFromMidnight, getDayName, isSameDay } from '../utils'
 import GroupSelectorModal from '../components/GroupSelectorModal'
@@ -13,12 +12,12 @@ import {
 	AlertCircle,
 	Check,
 	Archive,
-	RotateCcw,
 	ChevronLeft,
 	ChevronRight,
 	Calendar,
 	Grid,
 	RefreshCw,
+	ExternalLink,
 } from 'lucide-react'
 import { fetchScheduleForWeek, getAvailableWeeks } from '../services/scheduleService'
 import { getSelectedGroup } from '../services/groupService'
@@ -33,13 +32,14 @@ import clsx from 'clsx'
 import CampusMapWidget from '../components/widgets/CampusMapWidget'
 import DeansOfficeWidget from '../components/widgets/DeansOfficeWidget'
 import DeansOfficeModal from '../components/DeansOfficeModal'
-import NewsWidget from '../components/widgets/NewsWidget'
+
 
 // --- Types ---
 interface Deadline {
 	id: string
 	title: string
 	date: string // YYYY-MM-DD
+	description?: string
 }
 
 interface ToastState {
@@ -68,7 +68,6 @@ const Home: React.FC = () => {
 	const [minutesNow, setMinutesNow] = useState(getCurrentTimeMinutes())
 	
 	// Countdown State
-	const [secondsLeft, setSecondsLeft] = useState<number>(0)
 	const [countdownString, setCountdownString] = useState<string>('')
 
 	// --- New Features State ---
@@ -81,6 +80,8 @@ const Home: React.FC = () => {
 	const [isArchiveOpen, setIsArchiveOpen] = useState(false)
 	const [newDeadlineTitle, setNewDeadlineTitle] = useState('')
 	const [newDeadlineDate, setNewDeadlineDate] = useState('')
+	const [newDeadlineDescription, setNewDeadlineDescription] = useState('')
+	const [selectedDeadline, setSelectedDeadline] = useState<Deadline | null>(null)
 	const [isDeansOfficeModalOpen, setIsDeansOfficeModalOpen] = useState(false)
 
 	const [toast, setToast] = useState<ToastState>({ show: false, message: '', type: 'success' })
@@ -97,7 +98,6 @@ const Home: React.FC = () => {
 	const [availableWeeks, setAvailableWeeks] = useState<Array<{ id: string; label: string; start: Date; end: Date }>>([])
 	const [loadedWeekId, setLoadedWeekId] = useState<string | null>(null)
 
-	// --- Load Initial Data (only once) ---
 	// --- Load Initial Data (only once) ---
 	const loadScheduleData = async (forceRefresh = false) => {
 		const selectedGroup = await getSelectedGroup()
@@ -175,7 +175,7 @@ const Home: React.FC = () => {
 		savedDeadlines.forEach((d: Deadline) => {
 			const dDate = new Date(d.date)
 			dDate.setHours(0, 0, 0, 0)
-			if (dDate.getTime() < today.getTime() - 86400000) {
+			if (dDate.getTime() < today.getTime()) {
 				expired.push(d)
 			} else {
 				active.push(d)
@@ -359,6 +359,8 @@ const Home: React.FC = () => {
 		}
 	}, [todaysEvents.length, selectedDate, currentClassIndex, isLoadingSchedule, isTransitioning])
 
+
+
 	// --- Handlers ---
 
 	const handleDayChange = (offset: number) => {
@@ -412,10 +414,22 @@ const Home: React.FC = () => {
 			return
 		}
 
+		// Validate date is not in the past
+		const today = new Date()
+		today.setHours(0, 0, 0, 0)
+		const selectedDateObj = new Date(newDeadlineDate)
+		selectedDateObj.setHours(0, 0, 0, 0)
+		
+		if (selectedDateObj.getTime() < today.getTime()) {
+			showToast('Nie można dodać deadline w przeszłości', 'error')
+			return
+		}
+
 		const newDeadline: Deadline = {
 			id: Date.now().toString(),
 			title: newDeadlineTitle,
 			date: newDeadlineDate,
+			description: newDeadlineDescription.trim() || undefined,
 		}
 
 		const updated = [...deadlines, newDeadline].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
@@ -424,12 +438,13 @@ const Home: React.FC = () => {
 
 		setNewDeadlineTitle('')
 		setNewDeadlineDate('')
+		setNewDeadlineDescription('')
 		setIsDeadlineModalOpen(false)
 		showToast('Dodano deadline')
 
 		// Schedule notification
 		import('../services/notificationService').then(({ scheduleManualDeadline }) => {
-			scheduleManualDeadline(newDeadline.id, newDeadline.title, newDeadline.date)
+			scheduleManualDeadline(newDeadline.id, newDeadline.title, newDeadline.date, newDeadline.description)
 		})
 	}
 
@@ -471,23 +486,6 @@ const Home: React.FC = () => {
 		const updated = archivedDeadlines.filter(d => d.id !== id)
 		setArchivedDeadlines(updated)
 		localStorage.setItem('user-deadlines-archive', JSON.stringify(updated))
-	}
-
-	const restoreFromArchive = (id: string) => {
-		const item = archivedDeadlines.find(d => d.id === id)
-		if (item) {
-			const updatedArchive = archivedDeadlines.filter(d => d.id !== id)
-			const updatedDeadlines = [...deadlines, item].sort(
-				(a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
-			)
-
-			setArchivedDeadlines(updatedArchive)
-			setDeadlines(updatedDeadlines)
-
-			localStorage.setItem('user-deadlines', JSON.stringify(updatedDeadlines))
-			localStorage.setItem('user-deadlines-archive', JSON.stringify(updatedArchive))
-			showToast('Przywrócono deadline')
-		}
 	}
 
 	const getDeadlineColor = (dateStr: string) => {
@@ -838,7 +836,8 @@ const Home: React.FC = () => {
 						return (
 							<div
 								key={dl.id}
-								className={`shrink-0 w-32 aspect-square rounded-2xl p-3 flex flex-col justify-between border ${colorClass} relative group transition-transform active:scale-95 overflow-hidden`}>
+								onClick={() => setSelectedDeadline(dl)}
+								className={`shrink-0 w-32 aspect-square rounded-2xl p-3 flex flex-col justify-between border ${colorClass} relative group transition-transform active:scale-95 overflow-hidden cursor-pointer`}>
 								<div
 									className="absolute top-0 right-0 w-16 h-16 rounded-full -mr-8 -mt-8 pointer-events-none opacity-10"
 									style={{ backgroundColor: 'currentColor' }}></div>
@@ -849,8 +848,11 @@ const Home: React.FC = () => {
 									</span>
 								</div>
 								<div className="relative z-10">
-									<h4 className="font-bold text-sm leading-tight line-clamp-2 mb-1">{dl.title}</h4>
-									<p className="text-[10px] font-medium opacity-80">{getDaysLeft(dl.date)}</p>
+									<h4 className="font-bold text-sm leading-tight line-clamp-1 mb-0.5">{dl.title}</h4>
+									{dl.description && (
+									<p className="text-[9px] opacity-60 line-clamp-1 mb-0.5">{dl.description}</p>
+								)}
+								<p className="text-[10px] font-medium opacity-80">{getDaysLeft(dl.date)}</p>
 								</div>
 
 								<button
@@ -895,9 +897,51 @@ const Home: React.FC = () => {
 					</div>
 				</div>
 
-				{/* News Widget - Full Width */}
-				<div className="h-48">
-					<NewsWidget />
+				{/* Useful Links Section */}
+				<div className="h-64">
+					<div className="bg-surface p-5 rounded-2xl border border-border relative overflow-hidden h-full flex flex-col">
+						{/* Decorative blob */}
+						<div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full blur-2xl pointer-events-none"></div>
+
+						<div className="flex items-center justify-between mb-4 relative z-10">
+							<div className="flex items-center gap-2">
+								<div className="p-1.5 bg-blue-500/10 rounded-lg text-blue-500">
+									<ExternalLink size={14} />
+								</div>
+								<h4 className="text-xs font-bold text-muted uppercase tracking-wide">Przydatne linki</h4>
+							</div>
+						</div>
+
+						<div className="space-y-3 relative z-10 flex-1">
+							<a href="https://usosweb.ubb.edu.pl/" target="_blank" rel="noopener noreferrer" 
+								className="flex items-start gap-3 p-2 -mx-2 rounded-lg active:bg-hover/50">
+								<div className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0 bg-blue-500"></div>
+								<div className="flex-1 min-w-0">
+									<h5 className="text-sm font-bold text-main leading-tight truncate">USOS Web</h5>
+									<p className="text-[10px] text-muted mt-0.5">System obsługi studiów</p>
+								</div>
+								<ChevronRight size={14} className="text-muted mt-1" />
+							</a>
+							<a href="https://plany.ubb.edu.pl/" target="_blank" rel="noopener noreferrer"
+								className="flex items-start gap-3 p-2 -mx-2 rounded-lg active:bg-hover/50">
+								<div className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0 bg-green-500"></div>
+								<div className="flex-1 min-w-0">
+									<h5 className="text-sm font-bold text-main leading-tight truncate">Plany zajęć</h5>
+									<p className="text-[10px] text-muted mt-0.5">Oficjalne plany UBB</p>
+								</div>
+								<ChevronRight size={14} className="text-muted mt-1" />
+							</a>
+							<a href="https://ubb.edu.pl/" target="_blank" rel="noopener noreferrer"
+								className="flex items-start gap-3 p-2 -mx-2 rounded-lg active:bg-hover/50">
+								<div className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0 bg-primary"></div>
+								<div className="flex-1 min-w-0">
+									<h5 className="text-sm font-bold text-main leading-tight truncate">Strona uczelni</h5>
+									<p className="text-[10px] text-muted mt-0.5">ubb.edu.pl</p>
+								</div>
+								<ChevronRight size={14} className="text-muted mt-1" />
+							</a>
+						</div>
+					</div>
 				</div>
 			</section>
 
@@ -927,7 +971,18 @@ const Home: React.FC = () => {
 							type="date"
 							value={newDeadlineDate}
 							onChange={e => setNewDeadlineDate(e.target.value)}
+							min={new Date().toISOString().split('T')[0]}
 							className="w-full bg-background border border-border rounded-xl p-3 text-main outline-none focus:border-primary transition-colors"
+						/>
+					</div>
+					<div>
+						<label className="text-xs font-bold text-muted uppercase ml-1 mb-1.5 block">Opis (opcjonalnie)</label>
+						<textarea
+							value={newDeadlineDescription}
+							onChange={e => setNewDeadlineDescription(e.target.value)}
+							className="w-full bg-background border border-border rounded-xl p-3 text-main outline-none focus:border-primary transition-colors resize-none"
+							placeholder="Dodatkowe informacje..."
+							rows={3}
 						/>
 					</div>
 					<button
@@ -991,6 +1046,44 @@ const Home: React.FC = () => {
 				</div>
 			</Modal>
 
+			{/* Deadline Detail Modal */}
+			<Modal
+				isOpen={!!selectedDeadline}
+				onClose={() => setSelectedDeadline(null)}
+				title="Szczegóły"
+			>
+				{selectedDeadline && (
+					<div className="space-y-4">
+						<div className={`p-4 rounded-xl border ${getDeadlineColor(selectedDeadline.date)}`}>
+							<div className="flex justify-between items-start mb-2">
+								<span className="text-xs font-bold uppercase opacity-70">
+									{new Date(selectedDeadline.date).toLocaleDateString('pl-PL', { 
+										weekday: 'long',
+										day: 'numeric', 
+										month: 'long',
+										year: 'numeric'
+									})}
+								</span>
+								<span className="text-xs font-bold">{getDaysLeft(selectedDeadline.date)}</span>
+							</div>
+							<h3 className="text-lg font-bold mb-2">{selectedDeadline.title}</h3>
+							{selectedDeadline.description && (
+								<p className="text-sm opacity-80 whitespace-pre-wrap">{selectedDeadline.description}</p>
+							)}
+						</div>
+						<button
+							onClick={() => {
+								initiateDeleteDeadline(selectedDeadline.id)
+								setSelectedDeadline(null)
+							}}
+							className="w-full flex items-center justify-center gap-2 bg-surface border border-border text-muted font-bold py-3 rounded-xl hover:bg-hover transition-colors">
+							<Archive size={18} />
+							<span>Archiwizuj</span>
+						</button>
+					</div>
+				)}
+			</Modal>
+
 			{/* Archive Modal */}
 			<Modal
 				isOpen={isArchiveOpen}
@@ -1008,16 +1101,10 @@ const Home: React.FC = () => {
 									<p className="text-[10px] text-muted">{dl.date}</p>
 								</div>
 								<div className="flex gap-2">
-									<button 
-										onClick={() => restoreFromArchive(dl.id)}
-										className="p-2 text-muted hover:text-green-500 hover:bg-green-500/10 rounded-lg transition-colors"
-										title="Przywróć">
-										<RotateCcw size={16} />
-									</button>
-									<button 
-										onClick={() => deleteFromArchive(dl.id)}
-										className="p-2 text-muted hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
-										title="Usuń trwale">
+								<button 
+									onClick={() => deleteFromArchive(dl.id)}
+									className="p-2 text-muted active:text-red-500 active:bg-red-500/10 rounded-lg transition-colors"
+									title="Usuń trwale">
 										<Trash2 size={16} />
 									</button>
 								</div>

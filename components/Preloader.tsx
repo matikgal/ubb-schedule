@@ -132,16 +132,8 @@ const Preloader: React.FC<PreloaderProps> = ({ onFinish }) => {
 							</svg>
 						</motion.div>
 
-						{/* Typography */}
-						<div className="text-center space-y-2">
-							<motion.h1
-								initial={{ y: 20, opacity: 0 }}
-								animate={{ y: 0, opacity: 1 }}
-								transition={{ delay: 1.0, duration: 0.8 }}
-								className="text-4xl font-bold text-white tracking-tight font-space"
-							>
-								UBB <span className="text-blue-500">Schedule</span>
-							</motion.h1>
+						{/* Typography - Plan Zajęć Only */}
+						<div className="text-center space-y-2 mt-4">
 							<motion.div
 								initial={{ opacity: 0 }}
 								animate={{ opacity: 1 }}
@@ -161,7 +153,7 @@ const Preloader: React.FC<PreloaderProps> = ({ onFinish }) => {
 							initial={{ width: 0, opacity: 0 }}
 							animate={{ width: 80, opacity: 1 }}
 							transition={{ delay: 1.6, duration: 0.5 }}
-							className="h-1 bg-white/10 rounded-full overflow-hidden mt-2"
+							className="h-1 bg-white/10 rounded-full overflow-hidden mt-4"
 						>
 							<motion.div
 								animate={{ x: [-80, 80] }}
@@ -182,9 +174,6 @@ const Preloader: React.FC<PreloaderProps> = ({ onFinish }) => {
 						transition={{ delay: 2, duration: 1 }}
 						className="absolute bottom-12 text-center space-y-2 font-outfit"
 					>
-						<span className="text-[10px] font-bold tracking-[0.2em] text-gray-600 uppercase block">
-							Wersja 2.5.0
-						</span>
 						{lastUpdate && (
 							<div className="flex items-center justify-center gap-2 text-[10px] text-gray-500">
 								<span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.5)]" />

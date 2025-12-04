@@ -1,0 +1,40 @@
+/* Global Scrollbar Hiding */
+
+/* For Webkit browsers (Chrome, Safari, Edge) */
+::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+    background: transparent !important;
+    -webkit-appearance: none !important;
+}
+
+/* For Firefox */
+html,
+body {
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+    /* IE/Edge */
+    overflow: auto;
+    /* Ensure scrolling is still possible */
+}
+
+/* Universal selector fallback */
+* {
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+}
+
+/* Ensure body takes full height to avoid double scrollbars */
+html,
+body {
+    height: 100%;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+#root {
+    height: 100%;
+    width: 100%;
+}

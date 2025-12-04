@@ -18,7 +18,7 @@ export const initNotifications = async () => {
     }
 }
 
-export const scheduleManualDeadline = async (id: string, title: string, dateStr: string) => {
+export const scheduleManualDeadline = async (id: string, title: string, dateStr: string, description?: string) => {
     try {
         // dateStr is YYYY-MM-DD
         const deadlineDate = new Date(dateStr)
@@ -41,11 +41,15 @@ export const scheduleManualDeadline = async (id: string, title: string, dateStr:
         // Generate numeric ID from string ID
         const notificationId = Math.abs(stringHash(id))
 
+        const bodyText = description
+            ? `Jutro: ${title}\n${description}`
+            : `Jutro: ${title}`
+
         await LocalNotifications.schedule({
             notifications: [{
                 id: notificationId,
                 title: 'Przypomnienie o terminie 📅',
-                body: `Jutro: ${title}`,
+                body: bodyText,
                 schedule: { at: notificationDate },
                 channelId: 'deadlines',
                 smallIcon: 'ic_stat_icon_config_sample',
