@@ -52,10 +52,17 @@ const ClassCard: React.FC<ClassCardProps> = ({ event, isActive, isLast }) => {
                         <MapPin size={14} className="opacity-70" />
                         {event.room}
                      </div>
-                     <div className="flex items-center gap-1.5 text-xs text-muted">
-                        <User size={14} className="opacity-70" />
-                        <span>{event.teacher}</span>
-                     </div>
+                     {event.teacher ? (
+                         <div className="flex items-center gap-1.5 text-xs text-muted">
+                            <User size={14} className="opacity-70" />
+                            <span>{event.teacher}</span>
+                         </div>
+                     ) : (
+                         <div className="flex items-center gap-1.5 text-xs text-muted">
+                            <User size={14} className="opacity-70" />
+                            <span>{event.groups ? event.groups.join(', ') : ''}</span>
+                         </div>
+                     )}
                 </div>
              </div>
         </div>

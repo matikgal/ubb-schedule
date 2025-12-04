@@ -1,65 +1,51 @@
 import React, { useState, useEffect } from 'react'
-import { Download, WifiOff } from 'lucide-react'
-import { isDataInitialized } from '../services/dataInitializer'
+import { Download, WifiOff, CheckCircle, AlertCircle } from 'lucide-react'
+import { getSyncStatus, subscribeToSyncStatus, SyncStatus } from '../services/syncService'
 
 const DataSyncIndicator: React.FC = () => {
-	const [isInitialized, setIsInitialized] = useState(false)
-	const [isOnline, setIsOnline] = useState(navigator.onLine)
+	const [status, setStatus] = useState<SyncStatus>(getSyncStatus())
+	const [visible, setVisible] = useState(false)
 
 	useEffect(() => {
-		// Sprawdź początkowy stan
-		isDataInitialized().then(setIsInitialized)
+		const unsubscribe = subscribeToSyncStatus((newStatus) => {
+			setStatus(newStatus)
+			
+			// Show if syncing or error
+			if (newStatus.isSyncing || newStatus.error) {
+				setVisible(true)
+			} else if (newStatus.lastSync && !newStatus.isSyncing && !newStatus.error) {
+				// Hide after success with a small delay
+				setTimeout(() => setVisible(false), 3000)
+			}
+		})
 
-		// Sprawdzaj co 2 sekundy czy dane zostały zainicjalizowane
-		const interval = setInterval(async () => {
-			const initialized = await isDataInitialized()
-			setIsInitialized(initialized)
-		}, 2000)
-
-		// Nasłuchuj zmian statusu online/offline
-		const handleOnline = () => setIsOnline(true)
-		const handleOffline = () => setIsOnline(false)
-
-		window.addEventListener('online', handleOnline)
-		window.addEventListener('offline', handleOffline)
-
-		// Force hide after 15 seconds to prevent stuck badge
-		const forceHideTimeout = setTimeout(() => {
-			setIsInitialized(true)
-		}, 15000)
-
-		return () => {
-			clearInterval(interval)
-			clearTimeout(forceHideTimeout)
-			window.removeEventListener('online', handleOnline)
-			window.removeEventListener('offline', handleOffline)
-		}
+		return () => unsubscribe()
 	}, [])
 
-	// Jeśli dane są zainicjalizowane, nie pokazuj nic
-	if (isInitialized) {
-		return null
-	}
+	if (!visible) return null
 
-	// Jeśli nie ma internetu i dane nie są zainicjalizowane
-	if (!isOnline) {
-		return (
-			<div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 animate-slide-down">
-				<div className="bg-red-500/90 backdrop-blur-md text-white px-4 py-2 rounded-full flex items-center gap-2 shadow-xl border border-red-400/20">
-					<WifiOff size={16} />
-					<span className="text-xs font-bold">Brak internetu - dane nie pobrane</span>
-				</div>
-			</div>
-		)
-	}
-
-	// Jeśli jest internet ale dane się pobierają
 	return (
 		<div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 animate-slide-down">
-			<div className="bg-primary/90 backdrop-blur-md text-black px-4 py-2 rounded-full flex items-center gap-2 shadow-xl border border-primary/20">
-				<Download size={16} className="animate-bounce" />
-				<span className="text-xs font-bold">Pobieranie danych...</span>
-			</div>
+			{status.isSyncing && (
+				<div className="bg-primary/90 backdrop-blur-md text-black px-4 py-2 rounded-full flex items-center gap-2 shadow-xl border border-primary/20">
+					<Download size={16} className="animate-bounce" />
+					<span className="text-xs font-bold">Pobieranie bazy ({status.progress}%)</span>
+				</div>
+			)}
+
+			{status.error && (
+				<div className="bg-red-500/90 backdrop-blur-md text-white px-4 py-2 rounded-full flex items-center gap-2 shadow-xl border border-red-400/20">
+					<AlertCircle size={16} />
+					<span className="text-xs font-bold">Błąd: {status.error}</span>
+				</div>
+			)}
+			
+			{!status.isSyncing && !status.error && status.lastSync && (
+				<div className="bg-green-500/90 backdrop-blur-md text-white px-4 py-2 rounded-full flex items-center gap-2 shadow-xl border border-green-400/20">
+					<CheckCircle size={16} />
+					<span className="text-xs font-bold">Baza zaktualizowana</span>
+				</div>
+			)}
 		</div>
 	)
 }

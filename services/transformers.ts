@@ -46,14 +46,15 @@ export function parseClassType(subject: string): ClassType {
  */
 export function cleanSubjectName(subject: string): string {
   const abbreviations = ['wyk', 'ćw', 'lab', 'lek', 'pnj', 'sem', 'pro'];
-  
+
   let cleaned = subject;
   for (const abbr of abbreviations) {
     const regex = new RegExp(`\\s*${abbr}\\s*$`, 'i');
     cleaned = cleaned.replace(regex, '');
   }
 
-  return cleaned.trim();
+  // Remove trailing commas and whitespace
+  return cleaned.replace(/,\s*$/, '').trim();
 }
 
 /**
@@ -68,6 +69,7 @@ interface ClassItem {
   start_time: string;
   teacher_id: number;
   teacher_initials: string;
+  group_name?: string;
 }
 
 /**
@@ -119,7 +121,8 @@ async function getTeacherFullName(teacherId: number): Promise<string | null> {
 export async function transformSupabaseToClassEvents(
   data: ClassItem[],
   dayName: string,
-  groupName: string
+  groupName: string,
+  fallbackRoom?: string
 ): Promise<ClassEvent[]> {
   const dayOfWeek = mapDayNameToDayOfWeek(dayName);
 
@@ -130,9 +133,13 @@ export async function transformSupabaseToClassEvents(
   return data.map((item, index) => {
     const type = parseClassType(item.subject);
     const cleanedSubject = cleanSubjectName(item.subject);
-    
+
     // Użyj pełnego nazwiska jeśli dostępne, w przeciwnym razie inicjały
     const teacherName = teacherNames[index] || item.teacher_initials;
+
+    // Use specific group name from item if available, otherwise fallback to the passed groupName
+    const specificGroup = item.group_name;
+    const groups = specificGroup ? [specificGroup] : [groupName];
 
     return {
       id: `${item.week_id}-${dayOfWeek}-${index}`,
@@ -140,10 +147,10 @@ export async function transformSupabaseToClassEvents(
       type,
       startTime: item.start_time,
       endTime: item.end_time,
-      room: item.room_name,
+      room: item.room_name || fallbackRoom || '',
       teacher: teacherName,
       dayOfWeek,
-      groups: [groupName],
+      groups,
     };
   });
 }

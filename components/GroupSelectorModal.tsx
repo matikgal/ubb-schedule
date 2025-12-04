@@ -142,8 +142,15 @@ const GroupSelectorModal: React.FC<GroupSelectorModalProps> = ({ isOpen, onClose
 				setLoading(false)
 			}
 		} else if (currentStep === 'major') {
-			setSelectedMajor(value as string)
-			setCurrentStep('studyType')
+			const major = value as string
+			setSelectedMajor(major)
+			const majorLower = String(major).toLowerCase().trim()
+			if (majorLower.includes('erasmus')) {
+				setSelectedStudyType('S')
+				setCurrentStep('semester')
+			} else {
+				setCurrentStep('studyType')
+			}
 		} else if (currentStep === 'studyType') {
 			setSelectedStudyType(value as string)
 			setCurrentStep('semester')
@@ -169,14 +176,12 @@ const GroupSelectorModal: React.FC<GroupSelectorModalProps> = ({ isOpen, onClose
 		if (currentStep === 'group' || currentStep === 'allTeachers') {
 			const group = tempSelection as GroupInfo
 			
-			// If in preview mode, just return the group and close
 			if (mode === 'preview') {
 				onGroupSelected(group)
 				onClose()
 				return
 			}
 
-			// If in select mode (default), save and set as main group
 			setSelectedGroup(group)
 			try {
 				await saveSelectedGroup(group)
@@ -195,6 +200,11 @@ const GroupSelectorModal: React.FC<GroupSelectorModalProps> = ({ isOpen, onClose
 
 		if (currentStep === 'allTeachers') {
 			setCurrentStep('role')
+			return
+		}
+
+		if (currentStep === 'semester' && selectedMajor.toLowerCase().includes('erasmus')) {
+			setCurrentStep('major')
 			return
 		}
 

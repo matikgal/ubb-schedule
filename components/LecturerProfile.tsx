@@ -125,10 +125,12 @@ const LecturerProfile: React.FC<LecturerProfileProps> = ({ teacherId, teacherNam
 				<div className="space-y-2">
 					<div>
 						<h1 className="text-2xl font-display font-bold text-main leading-tight">{teacherName}</h1>
-						<div className="flex items-center gap-2 text-sm text-muted mt-1">
-							<GraduationCap size={16} />
-							<span>{faculty}</span>
-						</div>
+						{faculty && faculty !== 'Unknown' && (
+							<div className="flex items-center gap-2 text-sm text-muted mt-1">
+								<GraduationCap size={16} />
+								<span>{faculty}</span>
+							</div>
+						)}
 					</div>
 
 					{/* Contact Info */}

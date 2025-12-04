@@ -5,6 +5,9 @@ import { useTheme } from '../context/ThemeContext'
 import DataSyncIndicator from './DataSyncIndicator'
 import clsx from 'clsx'
 import { motion } from 'framer-motion'
+import { fetchSemesterInfo } from '../services/scheduleService'
+import { syncDatabase } from '../services/syncService'
+import { SemesterInfo } from '../types'
 
 interface LayoutProps {
 	children: React.ReactNode
@@ -19,6 +22,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 	const [showHeader, setShowHeader] = useState(true)
 	const [lastScrollY, setLastScrollY] = useState(0)
 	const [mousePos, setMousePos] = useState({ x: 0, y: 0 })
+	const [semesterInfo, setSemesterInfo] = useState<SemesterInfo | null>(null)
 	
 	// Get data from context to ensure live updates
 	const { nickname, avatarSeed } = useTheme()
@@ -37,6 +41,19 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 		checkGroupType()
 	}, [nickname])
 
+	// Fetch Semester Info and Sync DB
+	useEffect(() => {
+		const initApp = async () => {
+			// Start sync in background
+			syncDatabase()
+			
+			// Fetch semester info (will wait for DB init inside service)
+			const info = await fetchSemesterInfo()
+			setSemesterInfo(info)
+		}
+		initApp()
+	}, [])
+
 
 	// Handle scroll for header effects (Glass on scroll)
 	useEffect(() => {
@@ -52,7 +69,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 	// Parallax Effect for Background
 	useEffect(() => {
 		const handleMouseMove = (e: MouseEvent) => {
-			// Calculate normalized position (-1 to 1)
 			const x = (e.clientX / window.innerWidth) * 2 - 1
 			const y = (e.clientY / window.innerHeight) * 2 - 1
 			setMousePos({ x, y })
@@ -71,7 +87,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
 	const handleNavClick = (path: string) => {
 		if (navigator.vibrate) {
-			navigator.vibrate(10) // Haptic feedback
+			navigator.vibrate(10)
 		}
 		navigate(path)
 	}
@@ -121,6 +137,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 					<span className="text-xs font-bold text-muted uppercase tracking-wide mb-0.5 flex items-center gap-2">
 						{dateStr}
 					</span>
+					{semesterInfo && (
+						<span className="text-[10px] font-bold text-primary/80 uppercase tracking-wider mb-1 block">
+							{semesterInfo.semester} {semesterInfo.academic_year}
+						</span>
+					)}
 					<h1 className="text-xl font-display font-bold text-main">
 						{nickname === 'Student' || isTeacher ? 'Dzień dobry' : `Cześć, ${nickname}`}
 					</h1>

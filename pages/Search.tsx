@@ -1,33 +1,39 @@
 import React, { useState, useEffect } from 'react'
-import { Search as SearchIcon, X, Users, ChevronRight } from 'lucide-react'
-import { fetchAllTeachers, fetchFaculties, fetchMajorsForFaculty, fetchGroupsForMajor } from '../services/groupService'
+import { Search as SearchIcon, X, Users, ChevronRight, MapPin } from 'lucide-react'
+import { fetchAllTeachers, fetchAllRooms } from '../services/groupService'
 import { GroupInfo } from '../types'
 import LecturerProfile from '../components/LecturerProfile'
+import RoomProfile from '../components/RoomProfile'
 import GroupScheduleView from '../components/GroupScheduleView'
 import GroupSelectorModal from '../components/GroupSelectorModal'
 import OfflineBadge from '../components/OfflineBadge'
-import { createPortal } from 'react-dom'
 
 const SearchPage: React.FC = () => {
 	const [searchQuery, setSearchQuery] = useState('')
 	const [teachers, setTeachers] = useState<GroupInfo[]>([])
+	const [rooms, setRooms] = useState<GroupInfo[]>([])
 	const [searchResults, setSearchResults] = useState<GroupInfo[]>([])
 	const [selectedLecturer, setSelectedLecturer] = useState<GroupInfo | null>(null)
+	const [selectedRoom, setSelectedRoom] = useState<GroupInfo | null>(null)
 	const [selectedGroup, setSelectedGroup] = useState<GroupInfo | null>(null)
 	const [isOnline, setIsOnline] = useState(navigator.onLine)
 	const [isGroupSelectorOpen, setIsGroupSelectorOpen] = useState(false)
 
-	// Load teachers on mount
+	// Load teachers and rooms on mount
 	useEffect(() => {
-		const loadTeachers = async () => {
+		const loadData = async () => {
 			try {
-				const data = await fetchAllTeachers()
-				setTeachers(data)
+				const [teachersData, roomsData] = await Promise.all([
+					fetchAllTeachers(),
+					fetchAllRooms()
+				])
+				setTeachers(teachersData)
+				setRooms(roomsData)
 			} catch (error) {
-				console.error('Failed to load teachers:', error)
+				console.error('Failed to load data:', error)
 			}
 		}
-		loadTeachers()
+		loadData()
 
 		const handleOnline = () => setIsOnline(true)
 		const handleOffline = () => setIsOnline(false)
@@ -41,7 +47,7 @@ const SearchPage: React.FC = () => {
 		}
 	}, [])
 
-	// Filter teachers when query changes
+	// Filter teachers and rooms when query changes
 	useEffect(() => {
 		if (!searchQuery.trim()) {
 			setSearchResults([])
@@ -49,11 +55,22 @@ const SearchPage: React.FC = () => {
 		}
 
 		const query = searchQuery.toLowerCase()
-		const filtered = teachers.filter(teacher => 
+		
+		const filteredTeachers = teachers.filter(teacher => 
 			teacher.name.toLowerCase().includes(query)
 		)
-		setSearchResults(filtered)
-	}, [searchQuery, teachers])
+
+		const filteredRooms = rooms.filter(room => 
+			room.name.toLowerCase().includes(query)
+		)
+
+		// Combine and sort results
+		const combined = [...filteredTeachers, ...filteredRooms].sort((a, b) => 
+			a.name.localeCompare(b.name)
+		)
+
+		setSearchResults(combined)
+	}, [searchQuery, teachers, rooms])
 
 	const handleClearSearch = () => {
 		setSearchQuery('')
@@ -71,6 +88,18 @@ const SearchPage: React.FC = () => {
 				phone={selectedLecturer.phone}
 				office={selectedLecturer.office}
 				onBack={() => setSelectedLecturer(null)}
+			/>
+		)
+	}
+
+	// Show room profile if selected
+	if (selectedRoom) {
+		return (
+			<RoomProfile
+				roomId={selectedRoom.id}
+				roomName={selectedRoom.name}
+				faculty={selectedRoom.faculty}
+				onBack={() => setSelectedRoom(null)}
 			/>
 		)
 	}
@@ -124,22 +153,32 @@ const SearchPage: React.FC = () => {
 					<div className="space-y-2 animate-fade-in">
 						<h3 className="text-xs font-bold text-muted uppercase tracking-wider ml-1">Wyniki wyszukiwania</h3>
 						<div className="space-y-2">
-							{searchResults.map(teacher => (
+							{searchResults.map(item => (
 								<button
-									key={teacher.id}
+									key={`${item.type}-${item.id}`}
 									onClick={() => {
-										console.log('👉 Selected lecturer:', teacher)
-										setSelectedLecturer(teacher)
+										console.log('👉 Selected item:', item)
+										if (item.type === 'teacher') {
+											setSelectedLecturer(item)
+										} else if (item.type === 'room') {
+											setSelectedRoom(item)
+										}
 									}}
 									className="w-full p-4 bg-surface border border-border rounded-xl flex items-center justify-between hover:border-primary/50 transition-all group text-left"
 								>
 									<div className="flex items-center gap-3">
-										<div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-											<Users size={20} />
+										<div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+											item.type === 'teacher' 
+												? 'bg-primary/10 text-primary' 
+												: 'bg-emerald-500/10 text-emerald-500'
+										}`}>
+											{item.type === 'teacher' ? <Users size={20} /> : <MapPin size={20} />}
 										</div>
 										<div>
-											<span className="font-bold text-main block">{teacher.name}</span>
-											<span className="text-xs text-muted">{teacher.faculty}</span>
+											<span className="font-bold text-main block">{item.name}</span>
+											{item.faculty && item.faculty !== 'Unknown' && (
+												<span className="text-xs text-muted">{item.faculty}</span>
+											)}
 										</div>
 									</div>
 									<ChevronRight size={18} className="text-muted group-hover:text-primary transition-colors" />

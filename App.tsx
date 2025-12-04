@@ -57,10 +57,7 @@ const App: React.FC = () => {
 
 	// Initialize data on first load
 	useEffect(() => {
-		const initData = async () => {
-			const { initializeAllData } = await import('./services/dataInitializer')
-			await initializeAllData()
-		}
+
 
 		const initNative = async () => {
 			// Orientation Lock
@@ -89,7 +86,7 @@ const App: React.FC = () => {
 			}
 		}
 
-		initData()
+
 		initNative()
 	}, [])
 
