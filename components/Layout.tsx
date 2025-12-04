@@ -47,6 +47,14 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 			// Start sync in background
 			syncDatabase()
 			
+			// Init notifications
+			try {
+				const { initNotifications } = await import('../services/notificationService')
+				await initNotifications()
+			} catch (e) {
+				console.error('Failed to init notifications', e)
+			}
+			
 			// Fetch semester info (will wait for DB init inside service)
 			const info = await fetchSemesterInfo()
 			setSemesterInfo(info)

@@ -137,6 +137,9 @@ const Home: React.FC = () => {
 				const allEvents = await fetchScheduleForWeek(selectedGroup.id, weekId)
 				setAllEventsCache(allEvents)
 				setLoadedWeekId(weekId)
+
+				// Schedule notifications for deadlines
+				// Removed automatic scanning as per user request (manual list only)
 			} catch (error) {
 				console.error('Error loading schedule:', error)
 				setAllEventsCache([])
@@ -144,6 +147,7 @@ const Home: React.FC = () => {
 				setIsLoadingSchedule(false)
 				setIsRefreshing(false)
 			}
+
 		} else if (!weekId) {
 			// No weeks available
 			setAllEventsCache([])
@@ -421,6 +425,11 @@ const Home: React.FC = () => {
 		setNewDeadlineDate('')
 		setIsDeadlineModalOpen(false)
 		showToast('Dodano deadline')
+
+		// Schedule notification
+		import('../services/notificationService').then(({ scheduleManualDeadline }) => {
+			scheduleManualDeadline(newDeadline.id, newDeadline.title, newDeadline.date)
+		})
 	}
 
 	const initiateDeleteDeadline = (id: string) => {
@@ -445,7 +454,13 @@ const Home: React.FC = () => {
 
 			localStorage.setItem('user-deadlines', JSON.stringify(updatedDeadlines))
 			localStorage.setItem('user-deadlines-archive', JSON.stringify(updatedArchive))
+			localStorage.setItem('user-deadlines-archive', JSON.stringify(updatedArchive))
 			showToast('Przeniesiono do archiwum')
+
+			// Cancel notification
+			import('../services/notificationService').then(({ cancelDeadlineNotification }) => {
+				cancelDeadlineNotification(itemToArchive.id)
+			})
 		}
 
 		setConfirmDialog({ isOpen: false, title: '', message: '' })
@@ -475,8 +490,14 @@ const Home: React.FC = () => {
 	}
 
 	const getDeadlineColor = (dateStr: string) => {
-		const diffTime = new Date(dateStr).getTime() - new Date().getTime()
+		const target = new Date(dateStr)
+		target.setHours(0, 0, 0, 0)
+		const today = new Date()
+		today.setHours(0, 0, 0, 0)
+		
+		const diffTime = target.getTime() - today.getTime()
 		const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+		
 		if (diffDays < 0) return 'bg-slate-500/10 text-muted border-slate-500/20'
 		if (diffDays <= 3) return 'bg-red-500/10 text-red-500 border-red-500/20'
 		if (diffDays <= 7) return 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20'
@@ -484,8 +505,14 @@ const Home: React.FC = () => {
 	}
 
 	const getDaysLeft = (dateStr: string) => {
-		const diffTime = new Date(dateStr).getTime() - new Date().setHours(0, 0, 0, 0)
-		const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+		const target = new Date(dateStr)
+		target.setHours(0, 0, 0, 0)
+		const today = new Date()
+		today.setHours(0, 0, 0, 0)
+		
+		const diffTime = target.getTime() - today.getTime()
+		const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24))
+		
 		if (diffDays < 0) return 'Po terminie'
 		if (diffDays === 0) return 'Dziś'
 		if (diffDays === 1) return 'Jutro'
