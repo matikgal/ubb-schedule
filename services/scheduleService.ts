@@ -64,7 +64,13 @@ export async function fetchScheduleForWeek(
 
 		for (const [dayName, classItems] of Object.entries(weekData.schedule)) {
 			if (Array.isArray(classItems) && classItems.length > 0) {
-				const dayEvents = await transformSupabaseToClassEvents(classItems, dayName, entityName, isRoom ? entityName : undefined)
+				const dayEvents = await transformSupabaseToClassEvents(
+					classItems,
+					dayName,
+					!isTeacher && !isRoom ? entityName : undefined, // defaultGroup
+					isTeacher ? entityName : undefined,             // defaultTeacher
+					isRoom ? entityName : undefined                 // defaultRoom
+				)
 				events.push(...dayEvents)
 			}
 		}

@@ -20,7 +20,7 @@ import {
 	Grid,
 	RefreshCw,
 } from 'lucide-react'
-import { fetchScheduleForWeek } from '../services/scheduleService'
+import { fetchScheduleForWeek, getAvailableWeeks } from '../services/scheduleService'
 import { getSelectedGroup } from '../services/groupService'
 import { Swiper, SwiperSlide } from 'swiper/react'
 import { EffectCoverflow } from 'swiper/modules'
@@ -92,9 +92,14 @@ const Home: React.FC = () => {
 	const [isLoadingSchedule, setIsLoadingSchedule] = useState(true)
 	const [isTransitioning, setIsTransitioning] = useState(false)
 	const [isRefreshing, setIsRefreshing] = useState(false)
+	
+	// Week handling
+	const [availableWeeks, setAvailableWeeks] = useState<Array<{ id: string; label: string; start: Date; end: Date }>>([])
+	const [loadedWeekId, setLoadedWeekId] = useState<string | null>(null)
 
 	// --- Load Initial Data (only once) ---
-	const loadScheduleData = async () => {
+	// --- Load Initial Data (only once) ---
+	const loadScheduleData = async (forceRefresh = false) => {
 		const selectedGroup = await getSelectedGroup()
 
 		if (!selectedGroup) {
@@ -105,23 +110,58 @@ const Home: React.FC = () => {
 		}
 
 		setIsDemo(false)
-		setIsLoadingSchedule(true)
+		
+		// 1. Load available weeks if not loaded
+		let weeks = availableWeeks
+		if (weeks.length === 0 || forceRefresh) {
+			try {
+				weeks = await getAvailableWeeks(selectedGroup.id)
+				setAvailableWeeks(weeks)
+			} catch (e) {
+				console.error('Error loading weeks:', e)
+			}
+		}
 
-		try {
-			const allEvents = await fetchScheduleForWeek(selectedGroup.id)
-			setAllEventsCache(allEvents)
-		} catch (error) {
-			console.error('Error loading schedule:', error)
+		// 2. Find week for selectedDate
+		// Reset hours for comparison
+		const targetDate = new Date(selectedDate)
+		targetDate.setHours(12, 0, 0, 0) // Middle of day to avoid timezone edge cases
+
+		const matchingWeek = weeks.find(w => targetDate >= w.start && targetDate <= w.end)
+		const weekId = matchingWeek ? matchingWeek.id : weeks[0]?.id
+
+		// 3. Fetch schedule if week changed or forced
+		if (weekId && (weekId !== loadedWeekId || forceRefresh)) {
+			setIsLoadingSchedule(true)
+			try {
+				const allEvents = await fetchScheduleForWeek(selectedGroup.id, weekId)
+				setAllEventsCache(allEvents)
+				setLoadedWeekId(weekId)
+			} catch (error) {
+				console.error('Error loading schedule:', error)
+				setAllEventsCache([])
+			} finally {
+				setIsLoadingSchedule(false)
+				setIsRefreshing(false)
+			}
+		} else if (!weekId) {
+			// No weeks available
 			setAllEventsCache([])
-		} finally {
 			setIsLoadingSchedule(false)
+			setIsRefreshing(false)
+		} else {
+			// Same week, just stop loading indicators
 			setIsRefreshing(false)
 		}
 	}
 
+	// Initial load and date change handler
 	useEffect(() => {
 		loadScheduleData()
+	}, [selectedDate])
 
+	// Deadlines management
+	useEffect(() => {
 		const savedDeadlines = JSON.parse(localStorage.getItem('user-deadlines') || '[]')
 		const savedArchive = JSON.parse(localStorage.getItem('user-deadlines-archive') || '[]')
 
@@ -167,7 +207,7 @@ const Home: React.FC = () => {
 			if (startY > 0 && e.touches[0].clientY > startY + 100 && window.scrollY === 0 && !isRefreshing) {
 				setIsRefreshing(true)
 				if (navigator.vibrate) navigator.vibrate(20)
-				loadScheduleData()
+				loadScheduleData(true)
 				startY = 0 // Reset
 			}
 		}

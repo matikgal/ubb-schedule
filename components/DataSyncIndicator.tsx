@@ -27,9 +27,9 @@ const DataSyncIndicator: React.FC = () => {
 	return (
 		<div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 animate-slide-down">
 			{status.isSyncing && (
-				<div className="bg-primary/90 backdrop-blur-md text-black px-4 py-2 rounded-full flex items-center gap-2 shadow-xl border border-primary/20">
-					<Download size={16} className="animate-bounce" />
-					<span className="text-xs font-bold">Pobieranie bazy ({status.progress}%)</span>
+				<div className="bg-surface/90 backdrop-blur-md text-main px-4 py-2 rounded-full flex items-center gap-2 shadow-xl border border-primary/50">
+					<Download size={16} className="animate-bounce text-primary" />
+					<span className="text-xs font-bold">Pobieranie bazy ({Math.round(status.progress)}%)</span>
 				</div>
 			)}
 

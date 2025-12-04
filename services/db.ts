@@ -17,7 +17,7 @@ export async function initDB(): Promise<Database> {
 
     initPromise = (async () => {
         try {
-            console.log('Initializing database...')
+            // console.log('Initializing database...')
             // Load sql.js
             const SQL = await initSqlJs({
                 locateFile: file => `/${file}`,
@@ -28,18 +28,18 @@ export async function initDB(): Promise<Database> {
 
             if (savedDb) {
                 db = new SQL.Database(savedDb)
-                console.log('Database loaded from local storage')
+                // console.log('Database loaded from local storage')
 
                 // DEBUG: Check row count
-                try {
-                    const res = db.exec("SELECT count(*) as count FROM unified_schedules")
-                    console.log('Rows in unified_schedules:', res[0].values[0][0])
-                } catch (e) {
-                    console.log('Could not check row count:', e)
-                }
+                // try {
+                //     const res = db.exec("SELECT count(*) as count FROM unified_schedules")
+                //     // console.log('Rows in unified_schedules:', res[0].values[0][0])
+                // } catch (e) {
+                //     // console.log('Could not check row count:', e)
+                // }
             } else {
                 db = new SQL.Database()
-                console.log('New database created')
+                // console.log('New database created')
                 // Create tables if new
                 createTables(db)
             }
@@ -47,7 +47,7 @@ export async function initDB(): Promise<Database> {
             // Migration: Ensure updated_at exists in semester_info
             try {
                 db.run("ALTER TABLE semester_info ADD COLUMN updated_at TEXT")
-                console.log('Added updated_at column to semester_info')
+                // console.log('Added updated_at column to semester_info')
             } catch (e) {
                 // Column likely exists, ignore
             }
@@ -74,7 +74,7 @@ export async function saveDB(): Promise<void> {
     if (!db) return
     const data = db.export()
     await localforage.setItem(DB_NAME, data)
-    console.log('Database saved to local storage')
+    // console.log('Database saved to local storage')
 }
 
 export async function resetDB(): Promise<void> {

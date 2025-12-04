@@ -1,14 +1,15 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, Suspense } from 'react'
 import { HashRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom'
 import Layout from './components/Layout'
-import Home from './pages/Home'
-import SearchPage from './pages/Search'
-import SchedulePage from './pages/Schedule'
-import CalculatorPage from './pages/Calculator'
 import Preloader from './components/Preloader'
 import GroupSelectorModal from './components/GroupSelectorModal'
-import SettingsPage from './pages/Settings'
 import { ChevronLeft } from 'lucide-react'
+
+// Lazy Load Pages
+const Home = React.lazy(() => import('./pages/Home'))
+const SearchPage = React.lazy(() => import('./pages/Search'))
+const SchedulePage = React.lazy(() => import('./pages/Schedule'))
+const SettingsPage = React.lazy(() => import('./pages/Settings'))
 
 const PrivacyPage = () => {
 	const navigate = useNavigate()
@@ -41,24 +42,8 @@ const PrivacyPage = () => {
 const App: React.FC = () => {
 	const [loading, setLoading] = useState(true)
 
-	const handlePreloaderFinish = async () => {
-		// Force navigation to Home (root) when app starts
-		window.location.hash = '/'
-		setLoading(false)
-
-		// Ukryj natywny splash screen po zakończeniu animacji
-		try {
-			const { SplashScreen } = await import('@capacitor/splash-screen')
-			await SplashScreen.hide()
-		} catch (e) {
-			// Ignore if not on mobile
-		}
-	}
-
 	// Initialize data on first load
 	useEffect(() => {
-
-
 		const initNative = async () => {
 			// Orientation Lock
 			try {
@@ -86,28 +71,54 @@ const App: React.FC = () => {
 			}
 		}
 
+		// Prefetch pages immediately
+		const prefetchPages = () => {
+			const pages = [
+				import('./pages/Home'), // Critical path
+				import('./pages/Search'),
+				import('./pages/Schedule'),
+				import('./pages/Settings')
+			]
+			// We don't await here, just start fetching
+			Promise.all(pages).catch(err => console.debug('Prefetch error:', err))
+		}
 
 		initNative()
+		prefetchPages()
 	}, [])
 
-	if (loading) {
-		return <Preloader onFinish={handlePreloaderFinish} />
+	const handlePreloaderFinish = async () => {
+		// Force navigation to Home (root) when app starts
+		window.location.hash = '/'
+		setLoading(false)
+
+		// Ukryj natywny splash screen po zakończeniu animacji
+		try {
+			const { SplashScreen } = await import('@capacitor/splash-screen')
+			await SplashScreen.hide()
+		} catch (e) {
+			// Ignore if not on mobile
+		}
 	}
 
 	return (
-		<Router>
-			<Layout>
-				<Routes>
-					<Route path="/" element={<Home />} />
-					<Route path="/schedule" element={<SchedulePage />} />
-					<Route path="/search" element={<SearchPage />} />
-					<Route path="/calculator" element={<CalculatorPage />} />
-					<Route path="/settings" element={<SettingsPage />} />
-					<Route path="/privacy" element={<PrivacyPage />} />
-					<Route path="*" element={<Navigate to="/" replace />} />
-				</Routes>
-			</Layout>
-		</Router>
+		<>
+			{loading && <Preloader onFinish={handlePreloaderFinish} />}
+			<Router>
+				<Layout>
+					<Suspense fallback={null}>
+						<Routes>
+							<Route path="/" element={<Home />} />
+							<Route path="/schedule" element={<SchedulePage />} />
+							<Route path="/search" element={<SearchPage />} />
+							<Route path="/settings" element={<SettingsPage />} />
+							<Route path="/privacy" element={<PrivacyPage />} />
+							<Route path="*" element={<Navigate to="/" replace />} />
+						</Routes>
+					</Suspense>
+				</Layout>
+			</Router>
+		</>
 	)
 }
 

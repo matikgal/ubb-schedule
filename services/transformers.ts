@@ -1,4 +1,4 @@
-import { ClassEvent, ClassType } from '../types';
+import { ClassEvent, ClassType, ClassItem } from '../types';
 import { supabase } from './supabaseClient';
 
 /**
@@ -7,17 +7,19 @@ import { supabase } from './supabaseClient';
  * @returns Day of week number (1 = Monday, 7 = Sunday)
  */
 export function mapDayNameToDayOfWeek(dayName: string): number {
+  const normalizedDay = dayName.trim().toLowerCase();
+
   const dayMap: Record<string, number> = {
-    'Poniedziałek': 1,
-    'Wtorek': 2,
-    'Środa': 3,
-    'Czwartek': 4,
-    'Piątek': 5,
-    'Sobota': 6,
-    'Niedziela': 7,
+    'poniedziałek': 1,
+    'wtorek': 2,
+    'środa': 3,
+    'czwartek': 4,
+    'piątek': 5,
+    'sobota': 6,
+    'niedziela': 7,
   };
 
-  return dayMap[dayName] || 1;
+  return dayMap[normalizedDay] || 1;
 }
 
 /**
@@ -57,20 +59,7 @@ export function cleanSubjectName(subject: string): string {
   return cleaned.replace(/,\s*$/, '').trim();
 }
 
-/**
- * Interface for class item from Supabase
- */
-interface ClassItem {
-  room_id: number;
-  subject: string;
-  week_id: number;
-  end_time: string;
-  room_name: string;
-  start_time: string;
-  teacher_id: number;
-  teacher_initials: string;
-  group_name?: string;
-}
+
 
 /**
  * Cache dla pełnych nazwisk wykładowców
@@ -121,8 +110,9 @@ async function getTeacherFullName(teacherId: number): Promise<string | null> {
 export async function transformSupabaseToClassEvents(
   data: ClassItem[],
   dayName: string,
-  groupName: string,
-  fallbackRoom?: string
+  defaultGroup?: string,
+  defaultTeacher?: string,
+  defaultRoom?: string
 ): Promise<ClassEvent[]> {
   const dayOfWeek = mapDayNameToDayOfWeek(dayName);
 
@@ -134,12 +124,24 @@ export async function transformSupabaseToClassEvents(
     const type = parseClassType(item.subject);
     const cleanedSubject = cleanSubjectName(item.subject);
 
-    // Użyj pełnego nazwiska jeśli dostępne, w przeciwnym razie inicjały
-    const teacherName = teacherNames[index] || item.teacher_initials;
+    // Użyj pełnego nazwiska jeśli dostępne, w przeciwnym razie inicjały, w ostateczności defaultTeacher
+    const teacherName = teacherNames[index] || item.teacher_initials || defaultTeacher || '';
 
-    // Use specific group name from item if available, otherwise fallback to the passed groupName
+    // Use specific group name from item if available, otherwise fallback to defaultGroup
     const specificGroup = item.group_name;
-    const groups = specificGroup ? [specificGroup] : [groupName];
+    const groups = specificGroup ? [specificGroup] : (defaultGroup ? [defaultGroup] : []);
+
+    // DEBUG: Log transformation details
+    // if (index < 3) { // Log only first few items to avoid spam
+    //    console.log('Transforming item:', {
+    //        subject: item.subject,
+    //        teacherId: item.teacher_id,
+    //        teacherName,
+    //        defaultGroup,
+    //        itemGroupName: item.group_name,
+    //        resultGroups: groups
+    //    });
+    // }
 
     return {
       id: `${item.week_id}-${dayOfWeek}-${index}`,
@@ -147,8 +149,10 @@ export async function transformSupabaseToClassEvents(
       type,
       startTime: item.start_time,
       endTime: item.end_time,
-      room: item.room_name || fallbackRoom || '',
+      room: item.room_name || defaultRoom || '',
       teacher: teacherName,
+      teacherId: item.teacher_id,
+      roomId: item.room_id,
       dayOfWeek,
       groups,
     };

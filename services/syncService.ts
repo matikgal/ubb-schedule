@@ -84,6 +84,7 @@ export async function syncDatabase(force: boolean = false): Promise<void> {
         try {
             const res = db.exec("SELECT count(*) as count FROM unified_schedules")
             const count = res[0]?.values[0]?.[0] as number
+
             if (count > 0) isDbEmpty = false
         } catch (e) {
             // Ignore
@@ -91,16 +92,12 @@ export async function syncDatabase(force: boolean = false): Promise<void> {
 
         // DECISION LOGIC
         if (force) {
-            console.log('Sync forced')
             shouldSync = true
         } else if (isDbEmpty) {
-            console.log('Database empty, syncing...')
             shouldSync = true
         } else if (!localUpdatedAt || localUpdatedAt !== remoteSemester.updated_at) {
-            console.log('New data available:', { local: localUpdatedAt, remote: remoteSemester.updated_at })
             shouldSync = true
         } else {
-            console.log('Data up to date, skipping sync')
             shouldSync = false
         }
 
@@ -179,7 +176,7 @@ export async function syncDatabase(force: boolean = false): Promise<void> {
             error: null,
             progress: 100,
         })
-        console.log('Database synced successfully')
+        // console.log('Database synced successfully')
 
     } catch (error: any) {
         console.error('Sync failed:', error)

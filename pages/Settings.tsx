@@ -63,9 +63,38 @@ const SettingsPage = () => {
 	const [tempName, setTempName] = useState(nickname)
 	const navigate = useNavigate()
 
+	// Sync State
+	const [syncStatus, setSyncStatus] = useState<import('../services/syncService').SyncStatus>({
+		isSyncing: false,
+		lastSync: null,
+		error: null,
+		progress: 0
+	})
+
+	useEffect(() => {
+		const loadSync = async () => {
+			const { subscribeToSyncStatus, getSyncStatus } = await import('../services/syncService')
+			setSyncStatus(getSyncStatus())
+			const unsubscribe = subscribeToSyncStatus(status => {
+				setSyncStatus(status)
+			})
+			return unsubscribe
+		}
+		
+		const cleanupPromise = loadSync()
+		return () => {
+			cleanupPromise.then(unsubscribe => unsubscribe && unsubscribe())
+		}
+	}, [])
+
+	const handleManualSync = async () => {
+		const { syncDatabase } = await import('../services/syncService')
+		syncDatabase(true)
+	}
+
 	// Mock Data
 	const appVersion = '1.0.0'
-	const lastSyncDate = '15 Paź 2023, 04:30'
+	// const lastSyncDate = '15 Paź 2023, 04:30' // Replaced by real data
 	const avatarOptions = ['Alexander', 'Aneka', 'Felix', 'Jake', 'Jocelyn', 'Micah', 'Minia', 'Robert', 'Sorell', 'Zoe']
 
 	// Clear Data Modal State
@@ -310,15 +339,36 @@ const SettingsPage = () => {
 			<section className="space-y-3">
 				<h2 className="text-xs font-bold uppercase tracking-wide text-muted ml-1">Dane i System</h2>
 				<div className="bg-surface rounded-2xl overflow-hidden border border-border shadow-sm">
-					<div className="p-4 flex items-center justify-between border-b border-border">
+					<div 
+						onClick={() => handleManualSync()}
+						className={`p-4 flex items-center justify-between border-b border-border cursor-pointer hover:bg-hover transition-colors group ${syncStatus.isSyncing ? 'pointer-events-none opacity-70' : ''}`}
+					>
 						<div className="flex items-center gap-3">
-							<RefreshCw size={18} className="text-muted" />
+							<RefreshCw size={18} className={`text-muted transition-transform ${syncStatus.isSyncing ? 'animate-spin text-primary' : 'group-hover:text-primary'}`} />
 							<div>
-								<span className="text-main text-sm font-medium block">Ostatnia synchronizacja</span>
-								<span className="text-[10px] text-muted">{lastSyncDate}</span>
+								<span className="text-main text-sm font-medium block group-hover:text-primary transition-colors">
+									{syncStatus.isSyncing ? 'Synchronizacja...' : 'Ostatnia synchronizacja'}
+								</span>
+								<span className="text-[10px] text-muted">
+									{syncStatus.isSyncing 
+										? `Pobieranie danych (${Math.round(syncStatus.progress)}%)` 
+										: (syncStatus.lastSync ? new Date(syncStatus.lastSync).toLocaleString('pl-PL', {
+											day: 'numeric',
+											month: 'short',
+											year: 'numeric',
+											hour: '2-digit',
+											minute: '2-digit'
+										}) : 'Nigdy')}
+								</span>
 							</div>
 						</div>
-						<div className="px-2 py-1 bg-green-500/10 text-green-500 text-[10px] font-bold rounded">AKTUALNA</div>
+						<div className={`px-2 py-1 text-[10px] font-bold rounded transition-colors ${
+							syncStatus.isSyncing 
+								? 'bg-primary/10 text-primary' 
+								: (syncStatus.error ? 'bg-red-500/10 text-red-500' : 'bg-green-500/10 text-green-500')
+						}`}>
+							{syncStatus.isSyncing ? 'TRWA' : (syncStatus.error ? 'BŁĄD' : 'AKTUALNA')}
+						</div>
 					</div>
 
 					<div

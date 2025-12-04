@@ -31,7 +31,7 @@ const LecturerProfile: React.FC<LecturerProfileProps> = ({ teacherId, teacherNam
 			return
 		}
 
-		console.log('👤 LecturerProfile mounted:', { teacherId, teacherName, email, phone, office })
+		// console.log('👤 LecturerProfile mounted:', { teacherId, teacherName, email, phone, office })
 
 		const loadWeeks = async () => {
 			const weeks = await getAvailableWeeks(teacherId, true)

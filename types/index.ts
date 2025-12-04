@@ -8,8 +8,10 @@ export interface ClassEvent {
     endTime: string; // "HH:MM"
     room: string;
     teacher: string;
+    teacherId?: number;
     dayOfWeek: number; // 1 = Monday, 7 = Sunday
     groups: string[];
+    roomId?: number;
     weekId?: number; // Week identifier from Supabase
 }
 
@@ -86,6 +88,7 @@ export interface ClassItem {
     start_time: string;
     teacher_id: number;
     teacher_initials: string;
+    group_name?: string;
 }
 
 export interface CacheEntry {

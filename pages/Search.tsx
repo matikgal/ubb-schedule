@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
+import { useLocation } from 'react-router-dom'
 import { Search as SearchIcon, X, Users, ChevronRight, MapPin } from 'lucide-react'
-import { fetchAllTeachers, fetchAllRooms } from '../services/groupService'
+import { fetchAllTeachers, fetchAllRooms, findGroupsByName } from '../services/groupService'
 import { GroupInfo } from '../types'
 import LecturerProfile from '../components/LecturerProfile'
 import RoomProfile from '../components/RoomProfile'
@@ -9,6 +10,7 @@ import GroupSelectorModal from '../components/GroupSelectorModal'
 import OfflineBadge from '../components/OfflineBadge'
 
 const SearchPage: React.FC = () => {
+	const location = useLocation()
 	const [searchQuery, setSearchQuery] = useState('')
 	const [teachers, setTeachers] = useState<GroupInfo[]>([])
 	const [rooms, setRooms] = useState<GroupInfo[]>([])
@@ -18,6 +20,10 @@ const SearchPage: React.FC = () => {
 	const [selectedGroup, setSelectedGroup] = useState<GroupInfo | null>(null)
 	const [isOnline, setIsOnline] = useState(navigator.onLine)
 	const [isGroupSelectorOpen, setIsGroupSelectorOpen] = useState(false)
+
+	// State for handling multiple group matches
+	const [ambiguousGroups, setAmbiguousGroups] = useState<GroupInfo[]>([])
+	const [isAmbiguousGroupModalOpen, setIsAmbiguousGroupModalOpen] = useState(false)
 
 	// Load teachers and rooms on mount
 	useEffect(() => {
@@ -46,6 +52,50 @@ const SearchPage: React.FC = () => {
 			window.removeEventListener('offline', handleOffline)
 		}
 	}, [])
+
+	// Handle deep linking via state
+	useEffect(() => {
+		const state = location.state as { teacherId?: number; roomId?: number; groupName?: string } | null
+		if (!state) return
+
+		const handleDeepLink = async () => {
+			if (state.teacherId && teachers.length > 0) {
+				const teacher = teachers.find(t => t.id === state.teacherId)
+				if (teacher) {
+					setSelectedLecturer(teacher)
+					setSelectedRoom(null)
+					setSelectedGroup(null)
+				}
+			}
+
+			if (state.roomId && rooms.length > 0) {
+				const room = rooms.find(r => r.id === state.roomId)
+				if (room) {
+					setSelectedRoom(room)
+					setSelectedLecturer(null)
+					setSelectedGroup(null)
+				}
+			}
+
+			if (state.groupName) {
+				const groups = await findGroupsByName(state.groupName)
+				if (groups.length === 1) {
+					setSelectedGroup(groups[0])
+					setSelectedLecturer(null)
+					setSelectedRoom(null)
+				} else if (groups.length > 1) {
+					setAmbiguousGroups(groups)
+					setIsAmbiguousGroupModalOpen(true)
+					// Clear others so we don't stay on the previous view while modal is open
+					setSelectedLecturer(null)
+					setSelectedRoom(null)
+					setSelectedGroup(null)
+				}
+			}
+		}
+
+		handleDeepLink()
+	}, [location.state, teachers, rooms])
 
 	// Filter teachers and rooms when query changes
 	useEffect(() => {
@@ -157,7 +207,7 @@ const SearchPage: React.FC = () => {
 								<button
 									key={`${item.type}-${item.id}`}
 									onClick={() => {
-										console.log('👉 Selected item:', item)
+										// console.log('👉 Selected item:', item)
 										if (item.type === 'teacher') {
 											setSelectedLecturer(item)
 										} else if (item.type === 'room') {
@@ -228,6 +278,44 @@ const SearchPage: React.FC = () => {
 				}}
 				mode="preview"
 			/>
+
+			{/* Ambiguous Group Selection Modal */}
+			{isAmbiguousGroupModalOpen && (
+				<div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
+					<div className="bg-surface border border-border rounded-2xl w-full max-w-md p-6 shadow-xl animate-scale-in">
+						<div className="flex justify-between items-center mb-4">
+							<h2 className="text-xl font-bold text-main">Wybierz grupę</h2>
+							<button 
+								onClick={() => setIsAmbiguousGroupModalOpen(false)}
+								className="p-2 hover:bg-hover rounded-full transition-colors text-muted"
+							>
+								<X size={20} />
+							</button>
+						</div>
+						<p className="text-sm text-muted mb-4">
+							Znaleziono kilka grup pasujących do nazwy. Wybierz właściwą:
+						</p>
+						<div className="space-y-2 max-h-[60vh] overflow-y-auto">
+							{ambiguousGroups.map(group => (
+								<button
+									key={group.id}
+									onClick={() => {
+										setSelectedGroup(group)
+										setIsAmbiguousGroupModalOpen(false)
+									}}
+									className="w-full p-3 bg-background border border-border rounded-xl flex items-center justify-between hover:border-primary/50 transition-all group text-left"
+								>
+									<div>
+										<span className="font-bold text-main block">{group.name}</span>
+										<span className="text-xs text-muted">{group.field} {group.studyType}</span>
+									</div>
+									<ChevronRight size={18} className="text-muted group-hover:text-primary transition-colors" />
+								</button>
+							))}
+						</div>
+					</div>
+				</div>
+			)}
 		</div>
 	)
 }

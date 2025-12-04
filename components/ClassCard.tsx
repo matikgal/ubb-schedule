@@ -1,6 +1,7 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ClassEvent } from '../types';
-import { MapPin, User } from 'lucide-react';
+import { MapPin, User, Users } from 'lucide-react';
 
 interface ClassCardProps {
   event: ClassEvent;
@@ -10,6 +11,7 @@ interface ClassCardProps {
 }
 
 const ClassCard: React.FC<ClassCardProps> = ({ event, isActive, isLast }) => {
+  const navigate = useNavigate();
   
   // Swiss Style Pastel Palette
   const getColors = (type: string) => {
@@ -22,6 +24,25 @@ const ClassCard: React.FC<ClassCardProps> = ({ event, isActive, isLast }) => {
   };
 
   const theme = getColors(event.type);
+
+  const handleRoomClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (event.roomId) {
+        navigate('/search', { state: { roomId: event.roomId } });
+    }
+  };
+
+  const handleTeacherClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (event.teacherId) {
+        navigate('/search', { state: { teacherId: event.teacherId } });
+    }
+  };
+
+  const handleGroupClick = (groupName: string) => (e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigate('/search', { state: { groupName } });
+  };
 
   return (
     <div className="flex gap-4 relative group">
@@ -47,20 +68,44 @@ const ClassCard: React.FC<ClassCardProps> = ({ event, isActive, isLast }) => {
                     {event.subject}
                 </h3>
 
-                <div className="flex items-center gap-4">
-                     <div className="flex items-center gap-1.5 text-xs text-muted">
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                     {/* Room */}
+                     <button 
+                        onClick={handleRoomClick}
+                        disabled={!event.roomId}
+                        className={`flex items-center gap-1.5 text-xs text-muted transition-colors ${event.roomId ? 'hover:text-primary cursor-pointer' : 'cursor-default'}`}
+                     >
                         <MapPin size={14} className="opacity-70" />
                         {event.room}
-                     </div>
-                     {event.teacher ? (
-                         <div className="flex items-center gap-1.5 text-xs text-muted">
+                     </button>
+
+                     {/* Teacher */}
+                     {event.teacher && (
+                         <button 
+                            onClick={handleTeacherClick}
+                            disabled={!event.teacherId}
+                            className={`flex items-center gap-1.5 text-xs text-muted transition-colors ${event.teacherId ? 'hover:text-primary cursor-pointer' : 'cursor-default'}`}
+                         >
                             <User size={14} className="opacity-70" />
                             <span>{event.teacher}</span>
-                         </div>
-                     ) : (
+                         </button>
+                     )}
+
+                     {/* Groups */}
+                     {event.groups && event.groups.length > 0 && (
                          <div className="flex items-center gap-1.5 text-xs text-muted">
-                            <User size={14} className="opacity-70" />
-                            <span>{event.groups ? event.groups.join(', ') : ''}</span>
+                            <Users size={14} className="opacity-70" />
+                            <div className="flex flex-wrap gap-1">
+                                {event.groups.map((group, idx) => (
+                                    <button 
+                                        key={idx} 
+                                        onClick={handleGroupClick(group)}
+                                        className="hover:text-primary transition-colors cursor-pointer"
+                                    >
+                                        {group}{idx < event.groups.length - 1 ? ',' : ''}
+                                    </button>
+                                ))}
+                            </div>
                          </div>
                      )}
                 </div>

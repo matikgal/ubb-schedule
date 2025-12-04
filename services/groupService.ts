@@ -209,3 +209,39 @@ export async function getSelectedGroup(): Promise<GroupInfo | null> {
 export async function saveSelectedGroup(group: GroupInfo): Promise<void> {
 	localStorage.setItem('selectedGroup', JSON.stringify(group))
 }
+
+export async function findGroupsByName(name: string): Promise<GroupInfo[]> {
+	try {
+		await ensureDB()
+		// Try exact match first
+		let results = execQuery(`
+			SELECT id, name, faculty, major, study_type, weeks_count 
+			FROM unified_schedules 
+			WHERE type = 'group' AND name = ?
+		`, [name])
+
+		if (results.length === 0) {
+			// Try matching by suffix (e.g. "3gr" matching "Inf/S/Ist/5sem/3gr/a/SKiBS")
+			// Use LIKE with wildcards
+			results = execQuery(`
+				SELECT id, name, faculty, major, study_type, weeks_count 
+				FROM unified_schedules 
+				WHERE type = 'group' AND name LIKE ?
+			`, [`%${name}%`])
+		}
+
+		return results.map(row => ({
+			id: row.id,
+			name: row.name,
+			faculty: row.faculty,
+			field: cleanMajorName(row.major),
+			studyType: row.study_type,
+			weeksCount: row.weeks_count,
+			semester: extractSemesterFromGroupName(row.name) || undefined,
+			type: 'group',
+		}))
+	} catch (error) {
+		console.error('Error finding groups by name:', error)
+		return []
+	}
+}
