@@ -145,17 +145,14 @@ const Home: React.FC = () => {
 				setAllEventsCache([])
 			} finally {
 				setIsLoadingSchedule(false)
-				setIsRefreshing(false)
 			}
 
 		} else if (!weekId) {
 			// No weeks available
 			setAllEventsCache([])
 			setIsLoadingSchedule(false)
-			setIsRefreshing(false)
 		} else {
 			// Same week, just stop loading indicators
-			setIsRefreshing(false)
 		}
 	}
 
@@ -212,6 +209,10 @@ const Home: React.FC = () => {
 				setIsRefreshing(true)
 				if (navigator.vibrate) navigator.vibrate(20)
 				loadScheduleData(true)
+				// Safety timeout to ensure spinner disappears even if load hangs
+				setTimeout(() => {
+					setIsRefreshing(false)
+				}, 1500)
 				startY = 0 // Reset
 			}
 		}
@@ -549,11 +550,13 @@ const Home: React.FC = () => {
 	return (
 		<div className="space-y-6 animate-fade-in relative">
 			{/* Refresh Indicator */}
-			{isRefreshing && (
-				<div className="flex justify-center py-2 animate-fade-in">
-					<RefreshCw className="animate-spin text-primary" size={20} />
-				</div>
-			)}
+			{/* Refresh Indicator */}
+			<div 
+				className={`flex justify-center overflow-hidden transition-all duration-300 ease-in-out ${
+					isRefreshing ? 'max-h-12 py-2 opacity-100' : 'max-h-0 py-0 opacity-0'
+				}`}>
+				<RefreshCw className="animate-spin text-primary" size={20} />
+			</div>
 			
 			{/* --- Header --- */}
 			<div className="px-1 flex items-start justify-between">
@@ -579,7 +582,7 @@ const Home: React.FC = () => {
 					className={`w-full transition-opacity duration-150 ${isTransitioning ? 'opacity-0' : 'opacity-100'}`}
 					key={selectedDate.toISOString()}>
 					{isDemo ? (
-						<div className="flex flex-col items-center justify-center py-16 px-4 text-center border-2 border-dashed border-border rounded-3xl mx-auto max-w-[90vw] bg-surface/30 w-full relative overflow-hidden">
+						<div className="flex flex-col items-center justify-center py-8 my-6 px-4 text-center border-2 border-dashed border-border rounded-3xl mx-auto max-w-[90vw] bg-surface/30 w-full relative overflow-hidden">
 							<div className="absolute -top-12 -right-12 w-32 h-32 rounded-full pointer-events-none opacity-20 bg-primary blur-3xl"></div>
 							<div className="absolute -bottom-12 -left-12 w-32 h-32 rounded-full pointer-events-none opacity-20 bg-primary blur-3xl"></div>
 
