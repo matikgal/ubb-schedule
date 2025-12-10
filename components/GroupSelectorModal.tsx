@@ -243,65 +243,59 @@ const GroupSelectorModal: React.FC<GroupSelectorModalProps> = ({ isOpen, onClose
 		<Modal
 			isOpen={isOpen}
 			onClose={onClose}
-			className="p-0 w-full max-h-[60vh] min-h-[300px] mb-20 flex flex-col"
-			scrollable={false}
-			hideCloseButton={true}
+			title={getStepTitle()}
+			className="h-full flex flex-col"
 		>
-			{/* Header - Fixed */}
-			<div className="p-6 border-b border-border flex-shrink-0 bg-surface z-20">
-				<div className="flex justify-between items-center mb-4">
-					<h3 className="font-display font-bold text-lg text-main">{getStepTitle()}</h3>
-					<button onClick={onClose} className="p-2 hover:bg-hover rounded-lg transition-colors">
-						<X size={20} className="text-muted" />
-					</button>
-				</div>
-				<div className="h-1 w-full bg-background rounded-full overflow-hidden">
+			<div className="flex-1 overflow-y-auto px-6 pb-6">
+				{/* Progress Bar */}
+				<div className="mb-6 h-1 w-full bg-white/10 rounded-full overflow-hidden">
 					<div
 						className="h-full bg-primary transition-all duration-300"
 						style={{ width: `${(getStepNumber() / (selectedRole === 'teacher' ? 2 : 6)) * 100}%` }}></div>
 				</div>
-			</div>
 
-			{/* Content - Scrollable */}
-			<div className="flex-1 overflow-y-auto overscroll-contain relative">
 				{error && (
-					<div className="mx-6 mt-6 mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-500 text-sm">
+					<div className="mb-6 p-4 bg-red-500/20 border border-red-500/30 rounded-2xl text-red-200 text-sm">
 						{error}
 					</div>
 				)}
 
 				{loading ? (
-					<div className="space-y-3 p-6">
+					<div className="space-y-3">
 						{[1, 2, 3, 4].map(i => (
-							<div key={i} className="h-14 rounded-xl skeleton-shimmer" style={{ animationDelay: `${i * 100}ms` }} />
+							<div key={i} className="h-16 rounded-2xl bg-white/5 animate-pulse" style={{ animationDelay: `${i * 100}ms` }} />
 						))}
 					</div>
 				) : (
-					<div className={`space-y-2 pb-4 ${currentStep === 'allTeachers' ? '' : 'p-6'}`}>
+					<div className="space-y-3">
 						{/* Role Selection */}
 						{currentStep === 'role' && (
-							<div className="space-y-3">
+							<div className="space-y-4">
 								<button
 									onClick={() => handleSelection('student')}
-									className={`w-full p-6 border rounded-2xl text-left transition-all group flex items-center justify-between ${
-										isSelected('student') ? 'bg-primary/10 border-primary' : 'bg-background hover:bg-hover border-border'
+									className={`w-full p-6 border rounded-3xl text-left transition-all group flex items-center justify-between ${
+										isSelected('student') 
+											? 'bg-primary border-primary text-black' 
+											: 'bg-white/5 hover:bg-white/10 border-white/10 text-white'
 									}`}>
 									<div>
-										<span className={`font-bold text-lg block mb-1 ${isSelected('student') ? 'text-primary' : 'text-main'}`}>Student</span>
-										<span className="text-muted text-xs">Przeglądaj plany grup dziekańskich</span>
+										<span className="font-bold text-xl block mb-1">Student</span>
+										<span className={`text-sm ${isSelected('student') ? 'text-black/70' : 'text-white/50'}`}>Przeglądaj plany grup dziekańskich</span>
 									</div>
-									{isSelected('student') && <Check size={24} className="text-primary" />}
+									{isSelected('student') && <Check size={28} className="text-black" />}
 								</button>
 								<button
 									onClick={() => handleSelection('teacher')}
-									className={`w-full p-6 border rounded-2xl text-left transition-all group flex items-center justify-between ${
-										isSelected('teacher') ? 'bg-primary/10 border-primary' : 'bg-background hover:bg-hover border-border'
+									className={`w-full p-6 border rounded-3xl text-left transition-all group flex items-center justify-between ${
+										isSelected('teacher') 
+											? 'bg-primary border-primary text-black' 
+											: 'bg-white/5 hover:bg-white/10 border-white/10 text-white'
 									}`}>
 									<div>
-										<span className={`font-bold text-lg block mb-1 ${isSelected('teacher') ? 'text-primary' : 'text-main'}`}>Wykładowca</span>
-										<span className="text-muted text-xs">Znajdź plan prowadzącego</span>
+										<span className="font-bold text-xl block mb-1">Wykładowca</span>
+										<span className={`text-sm ${isSelected('teacher') ? 'text-black/70' : 'text-white/50'}`}>Znajdź plan prowadzącego</span>
 									</div>
-									{isSelected('teacher') && <Check size={24} className="text-primary" />}
+									{isSelected('teacher') && <Check size={28} className="text-black" />}
 								</button>
 							</div>
 						)}
@@ -312,11 +306,13 @@ const GroupSelectorModal: React.FC<GroupSelectorModalProps> = ({ isOpen, onClose
 								<button
 									key={faculty}
 									onClick={() => handleSelection(faculty)}
-									className={`w-full p-4 border rounded-xl text-left transition-all flex items-center justify-between ${
-										isSelected(faculty) ? 'bg-primary/10 border-primary' : 'bg-background hover:bg-hover border-border'
+									className={`w-full p-5 border rounded-2xl text-left transition-all flex items-center justify-between ${
+										isSelected(faculty) 
+											? 'bg-primary border-primary text-black font-bold' 
+											: 'bg-white/5 hover:bg-white/10 border-white/10 text-white font-medium'
 									}`}>
-									<span className={`font-medium ${isSelected(faculty) ? 'text-primary' : 'text-main'}`}>{faculty}</span>
-									{isSelected(faculty) && <Check size={18} className="text-primary" />}
+									<span>{faculty}</span>
+									{isSelected(faculty) && <Check size={20} />}
 								</button>
 							))}
 
@@ -326,11 +322,13 @@ const GroupSelectorModal: React.FC<GroupSelectorModalProps> = ({ isOpen, onClose
 								<button
 									key={major}
 									onClick={() => handleSelection(major)}
-									className={`w-full p-4 border rounded-xl text-left transition-all flex items-center justify-between ${
-										isSelected(major) ? 'bg-primary/10 border-primary' : 'bg-background hover:bg-hover border-border'
+									className={`w-full p-5 border rounded-2xl text-left transition-all flex items-center justify-between ${
+										isSelected(major) 
+											? 'bg-primary border-primary text-black font-bold' 
+											: 'bg-white/5 hover:bg-white/10 border-white/10 text-white font-medium'
 									}`}>
-									<span className={`font-medium ${isSelected(major) ? 'text-primary' : 'text-main'}`}>{major}</span>
-									{isSelected(major) && <Check size={18} className="text-primary" />}
+									<span>{major}</span>
+									{isSelected(major) && <Check size={20} />}
 								</button>
 							))}
 
@@ -340,11 +338,13 @@ const GroupSelectorModal: React.FC<GroupSelectorModalProps> = ({ isOpen, onClose
 								<button
 									key={type.value}
 									onClick={() => handleSelection(type.value)}
-									className={`w-full p-4 border rounded-xl text-left transition-all flex items-center justify-between ${
-										isSelected(type.value) ? 'bg-primary/10 border-primary' : 'bg-background hover:bg-hover border-border'
+									className={`w-full p-5 border rounded-2xl text-left transition-all flex items-center justify-between ${
+										isSelected(type.value) 
+											? 'bg-primary border-primary text-black font-bold' 
+											: 'bg-white/5 hover:bg-white/10 border-white/10 text-white font-medium'
 									}`}>
-									<span className={`font-medium ${isSelected(type.value) ? 'text-primary' : 'text-main'}`}>{type.label}</span>
-									{isSelected(type.value) && <Check size={18} className="text-primary" />}
+									<span>{type.label}</span>
+									{isSelected(type.value) && <Check size={20} />}
 								</button>
 							))}
 
@@ -354,48 +354,52 @@ const GroupSelectorModal: React.FC<GroupSelectorModalProps> = ({ isOpen, onClose
 								<button
 									key={sem}
 									onClick={() => handleSelection(sem)}
-									className={`w-full p-4 border rounded-xl text-left transition-all flex items-center justify-between ${
-										isSelected(sem) ? 'bg-primary/10 border-primary' : 'bg-background hover:bg-hover border-border'
+									className={`w-full p-5 border rounded-2xl text-left transition-all flex items-center justify-between ${
+										isSelected(sem) 
+											? 'bg-primary border-primary text-black font-bold' 
+											: 'bg-white/5 hover:bg-white/10 border-white/10 text-white font-medium'
 									}`}>
-									<span className={`font-medium ${isSelected(sem) ? 'text-primary' : 'text-main'}`}>Semestr {sem}</span>
-									{isSelected(sem) && <Check size={18} className="text-primary" />}
+									<span>Semestr {sem}</span>
+									{isSelected(sem) && <Check size={20} />}
 								</button>
 							))}
 
 						{/* Group */}
 						{currentStep === 'group' && groups.length === 0 && (
-							<div className="text-center py-8 text-muted">Brak dostępnych grup dla wybranej kombinacji</div>
+							<div className="text-center py-12 text-white/40">Brak dostępnych grup dla wybranej kombinacji</div>
 						)}
 						{currentStep === 'group' &&
 							groups.map(group => (
 								<button
 									key={group.id}
 									onClick={() => handleSelection(group)}
-									className={`w-full p-4 border rounded-xl text-left transition-all flex items-center justify-between ${
-										isSelected(group) ? 'bg-primary/10 border-primary' : 'bg-background hover:bg-hover border-border'
+									className={`w-full p-5 border rounded-2xl text-left transition-all flex items-center justify-between ${
+										isSelected(group) 
+											? 'bg-primary border-primary text-black font-bold' 
+											: 'bg-white/5 hover:bg-white/10 border-white/10 text-white font-medium'
 									}`}>
-									<span className={`font-medium ${isSelected(group) ? 'text-primary' : 'text-main'}`}>{group.name}</span>
-									{isSelected(group) && <Check size={18} className="text-primary" />}
+									<span>{group.name}</span>
+									{isSelected(group) && <Check size={20} />}
 								</button>
 							))}
 
 						{/* All Teachers */}
 						{currentStep === 'allTeachers' && (
 							<>
-								<div className="sticky top-0 bg-surface z-10 px-6 pt-6 pb-2 mb-2">
+								<div className="sticky top-0 bg-transparent z-10 pb-4">
 									<input
 										type="text"
 										placeholder="Szukaj wykładowcy..."
 										value={searchTerm}
 										onChange={e => setSearchTerm(e.target.value)}
-										className="w-full p-4 bg-background border border-border rounded-xl text-main placeholder:text-muted focus:outline-none focus:border-primary transition-colors"
+										className="w-full p-4 bg-black/20 border border-white/10 rounded-2xl text-white placeholder:text-white/40 focus:outline-none focus:border-primary/50 transition-colors backdrop-blur-md"
 										autoFocus
 									/>
 								</div>
 
-								<div className="px-6 space-y-2">
+								<div className="space-y-2">
 									{filteredTeachers.length === 0 ? (
-										<div className="text-center py-8 text-muted">
+										<div className="text-center py-12 text-white/40">
 											{searchTerm ? 'Nie znaleziono wykładowcy' : 'Brak dostępnych wykładowców'}
 										</div>
 									) : (
@@ -403,14 +407,16 @@ const GroupSelectorModal: React.FC<GroupSelectorModalProps> = ({ isOpen, onClose
 											<button
 												key={teacher.id}
 												onClick={() => handleSelection(teacher)}
-												className={`w-full p-4 border rounded-xl text-left transition-all flex items-center justify-between ${
-													isSelected(teacher) ? 'bg-primary/10 border-primary' : 'bg-background hover:bg-hover border-border'
+												className={`w-full p-4 border rounded-2xl text-left transition-all flex items-center justify-between ${
+													isSelected(teacher) 
+														? 'bg-primary border-primary text-black' 
+														: 'bg-white/5 hover:bg-white/10 border-white/10 text-white'
 												}`}>
 												<div>
-													<span className={`font-medium block ${isSelected(teacher) ? 'text-primary' : 'text-main'}`}>{teacher.name}</span>
-													<span className="text-[10px] text-muted">{teacher.faculty}</span>
+													<span className={`font-medium block ${isSelected(teacher) ? 'font-bold' : ''}`}>{teacher.name}</span>
+													<span className={`text-[11px] ${isSelected(teacher) ? 'text-black/70' : 'text-white/40'}`}>{teacher.faculty}</span>
 												</div>
-												{isSelected(teacher) && <Check size={18} className="text-primary" />}
+												{isSelected(teacher) && <Check size={20} />}
 											</button>
 										))
 									)}
@@ -421,12 +427,12 @@ const GroupSelectorModal: React.FC<GroupSelectorModalProps> = ({ isOpen, onClose
 				)}
 			</div>
 
-			{/* Footer - Navigation Buttons - Fixed */}
-			<div className="p-4 border-t border-border bg-surface flex-shrink-0 flex gap-3 z-20">
+			{/* Unified Footer */}
+			<div className="p-6 pt-2 flex gap-4 bg-transparent z-20">
 				{currentStep !== 'role' && (
 					<button
 						onClick={handleBack}
-						className="flex-1 py-3 px-4 rounded-xl border border-border text-main font-medium hover:bg-hover transition-colors"
+						className="flex-1 py-4 px-6 rounded-2xl border border-white/10 text-white font-bold hover:bg-white/5 transition-colors"
 					>
 						Wstecz
 					</button>
@@ -435,10 +441,10 @@ const GroupSelectorModal: React.FC<GroupSelectorModalProps> = ({ isOpen, onClose
 					<button
 						onClick={handleConfirm}
 						disabled={!tempSelection}
-						className={`flex-1 py-3 px-4 rounded-xl font-bold transition-all border-2 ${
+						className={`flex-1 py-4 px-6 rounded-2xl font-bold transition-all shadow-lg ${
 							tempSelection
-								? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-600/25 hover:bg-blue-700'
-								: 'bg-transparent border-border text-muted cursor-not-allowed'
+								? 'bg-primary text-black shadow-primary/20 hover:bg-primary-hover'
+								: 'bg-white/5 text-white/20 border border-white/5 cursor-not-allowed'
 						}`}
 					>
 						Zatwierdź

@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { X, ChevronRight, Clock, Phone, Mail, MapPin, ArrowLeft } from 'lucide-react'
+import { X, ChevronRight, Clock, Phone, Mail, MapPin, ArrowLeft, User } from 'lucide-react'
 import Modal from './Modal'
 
 interface DeansOfficeModalProps {
@@ -129,113 +129,126 @@ const DeansOfficeModal: React.FC<DeansOfficeModalProps> = ({ isOpen, onClose }) 
 		<Modal
 			isOpen={isOpen}
 			onClose={handleClose}
-			className="p-0 w-full max-h-[65vh] min-h-[400px] mb-20 flex flex-col"
-			scrollable={false}
-			hideCloseButton={true}
+			title={selectedOffice ? selectedOffice.name : 'Godziny dziekanatów'}
 		>
-			{/* Header */}
-			<div className="p-6 border-b border-border flex-shrink-0 bg-surface z-20">
-				<div className="flex justify-between items-center">
-					<div className="flex items-center gap-3">
-						{selectedOffice && (
-							<button 
-								onClick={() => setSelectedOffice(null)}
-								className="p-2 -ml-2 hover:bg-hover rounded-lg transition-colors"
-							>
-								<ArrowLeft size={20} className="text-main" />
-							</button>
-						)}
-						<h3 className="font-display font-bold text-lg text-main">
-							{selectedOffice ? 'Szczegóły' : 'Godziny dziekanatów'}
-						</h3>
-					</div>
-					<button onClick={handleClose} className="p-2 hover:bg-hover rounded-lg transition-colors">
-						<X size={20} className="text-muted" />
+			<div className="flex flex-col h-full p-6">
+				{selectedOffice && (
+					<button 
+						onClick={() => setSelectedOffice(null)}
+						className="mb-6 flex items-center gap-2 text-sm text-primary font-bold hover:gap-3 transition-all w-fit group"
+					>
+						<ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
+						Wróć do listy
 					</button>
-				</div>
-			</div>
+				)}
 
-			{/* Content */}
-			<div className="flex-1 overflow-y-auto p-6 overscroll-contain">
-				{!selectedOffice ? (
-					<div className="space-y-3">
-						{offices.map(office => (
-							<button
-								key={office.id}
-								onClick={() => setSelectedOffice(office)}
-								className="w-full p-4 border border-border rounded-xl text-left transition-all bg-background hover:bg-hover hover:border-primary/50 group"
-							>
-								<div className="flex justify-between items-center mb-1">
-									<span className="font-bold text-main group-hover:text-primary transition-colors pr-4">
-										{office.name}
-									</span>
-									<ChevronRight size={18} className="text-muted group-hover:text-primary transition-colors flex-shrink-0" />
-								</div>
-								<div className="flex items-center gap-2 text-xs text-muted">
-									<MapPin size={12} />
-									<span>{office.location}</span>
-								</div>
-							</button>
-						))}
-					</div>
-				) : (
-					<div className="space-y-6 animate-fade-in">
-						<div>
-							<h2 className="text-xl font-bold text-main mb-2">{selectedOffice.name}</h2>
-							<div className="flex items-center gap-2 text-sm text-muted">
-								<MapPin size={16} />
-								<span>{selectedOffice.location}</span>
-							</div>
-						</div>
-
-						<div className="space-y-4">
-							<h4 className="text-sm font-bold text-muted uppercase tracking-wider">Godziny otwarcia</h4>
-							<div className="space-y-2">
-								{selectedOffice.hours.map((h, idx) => (
-									<div key={idx} className="flex justify-between items-center p-3 bg-background rounded-lg border border-border">
-										<span className="font-medium text-main">{h.day}</span>
-										<span className={`font-bold ${h.time === 'Zamknięte' ? 'text-red-500' : 'text-primary'}`}>
-											{h.time}
+				<div className="flex-1 overflow-y-auto space-y-4 -mr-2 pr-2 scrollbar-hide">
+					{!selectedOffice ? (
+						<div className="space-y-3">
+							{offices.map(office => (
+								<button
+									key={office.id}
+									onClick={() => setSelectedOffice(office)}
+									className="w-full p-5 border border-white/10 bg-white/5 rounded-2xl text-left transition-all hover:bg-white/10 hover:border-white/20 hover:scale-[1.02] group shadow-sm active:scale-95"
+								>
+									<div className="flex justify-between items-center mb-1">
+										<span className="font-bold text-main group-hover:text-primary transition-colors pr-4 text-sm leading-relaxed">
+											{office.name}
 										</span>
+										<ChevronRight size={18} className="text-muted/50 group-hover:text-primary transition-colors flex-shrink-0" />
 									</div>
-								))}
-							</div>
+									<div className="flex items-center gap-2 text-xs text-muted/70">
+										<MapPin size={12} />
+										<span>{office.location}</span>
+									</div>
+								</button>
+							))}
 						</div>
+					) : (
+						<div className="space-y-8 animate-fade-in pb-12">
+							{/* Location Card */}
+							<div className="p-5 bg-white/5 border border-white/10 rounded-2xl">
+								<div className="flex items-start gap-4">
+									<div className="p-3 rounded-full bg-primary/10 text-primary">
+										<MapPin size={24} />
+									</div>
+									<div>
+										<h4 className="text-xs font-bold text-muted uppercase tracking-wider mb-1">Lokalizacja</h4>
+										<p className="text-main font-medium">{selectedOffice.location}</p>
+									</div>
+								</div>
+							</div>
 
-						{selectedOffice.staff.length > 0 && (
+							{/* Hours */}
 							<div className="space-y-4">
-								<h4 className="text-sm font-bold text-muted uppercase tracking-wider">Władze Wydziału / Dyżury</h4>
-								<div className="space-y-3">
-									{selectedOffice.staff.map((person, idx) => (
-										<div key={idx} className="p-4 bg-background border border-border rounded-xl">
-											<div className="mb-2">
-												<span className="text-xs font-bold text-primary uppercase block mb-0.5">{person.role}</span>
-												<span className="font-bold text-main">{person.name}</span>
-											</div>
-											<div className="text-sm text-muted">
-												{person.hours}
-											</div>
+								<h4 className="text-sm font-bold text-muted uppercase tracking-wider flex items-center gap-2">
+									<Clock size={16} /> Godziny otwarcia
+								</h4>
+								<div className="space-y-2">
+									{selectedOffice.hours.map((h, idx) => (
+										<div key={idx} className="flex justify-between items-center p-4 bg-white/5 rounded-2xl border border-white/5 hover:bg-white/10 transition-colors">
+											<span className="font-medium text-main text-sm">{h.day}</span>
+											<span className={`font-bold text-sm ${h.time === 'Zamknięte' ? 'text-red-400' : 'text-primary'}`}>
+												{h.time}
+											</span>
 										</div>
 									))}
 								</div>
 							</div>
-						)}
 
-						<div className="space-y-4">
-							<h4 className="text-sm font-bold text-muted uppercase tracking-wider">Kontakt</h4>
-							<div className="grid grid-cols-2 gap-3">
-								<a href={`tel:${selectedOffice.contact.phone}`} className="p-4 bg-background border border-border rounded-xl flex flex-col items-center justify-center gap-2 hover:border-primary/50 transition-colors">
-									<Phone size={20} className="text-primary" />
-									<span className="text-sm font-bold text-main text-center">{selectedOffice.contact.phone}</span>
-								</a>
-								<a href={`mailto:${selectedOffice.contact.email}`} className="p-4 bg-background border border-border rounded-xl flex flex-col items-center justify-center gap-2 hover:border-primary/50 transition-colors">
-									<Mail size={20} className="text-primary" />
-									<span className="text-sm font-bold text-main">Napisz e-mail</span>
-								</a>
+							{/* Staff */}
+							{selectedOffice.staff.length > 0 && (
+								<div className="space-y-4">
+									<h4 className="text-sm font-bold text-muted uppercase tracking-wider flex items-center gap-2">
+										<User size={16} /> Władze Wydziału
+									</h4>
+									<div className="space-y-3">
+										{selectedOffice.staff.map((person, idx) => (
+											<div key={idx} className="p-5 bg-white/5 border border-white/10 rounded-2xl hover:bg-white/[0.07] transition-colors">
+												<div className="mb-3">
+													<span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-1 rounded-md mb-2 inline-block">
+														{person.role}
+													</span>
+													<span className="font-bold text-main block text-lg">{person.name}</span>
+												</div>
+												<div className="text-sm text-muted/80 pl-2 border-l-2 border-white/10">
+													{person.hours}
+												</div>
+											</div>
+										))}
+									</div>
+								</div>
+							)}
+
+							{/* Contact */}
+							<div className="space-y-4">
+								<h4 className="text-sm font-bold text-muted uppercase tracking-wider flex items-center gap-2">
+									<Phone size={16} /> Kontakt
+								</h4>
+								<div className="grid grid-cols-2 gap-3">
+									<a 
+										href={`tel:${selectedOffice.contact.phone}`} 
+										className="p-4 bg-white/5 border border-white/10 rounded-2xl flex flex-col items-center justify-center gap-3 hover:bg-primary/10 hover:border-primary/30 transition-all active:scale-95 group"
+									>
+										<div className="p-2 rounded-full bg-white/5 group-hover:bg-primary/20 transition-colors">
+											<Phone size={20} className="text-primary" />
+										</div>
+										<span className="text-sm font-bold text-main text-center">{selectedOffice.contact.phone}</span>
+									</a>
+									<a 
+										href={`mailto:${selectedOffice.contact.email}`} 
+										className="p-4 bg-white/5 border border-white/10 rounded-2xl flex flex-col items-center justify-center gap-3 hover:bg-primary/10 hover:border-primary/30 transition-all active:scale-95 group"
+									>
+										<div className="p-2 rounded-full bg-white/5 group-hover:bg-primary/20 transition-colors">
+											<Mail size={20} className="text-primary" />
+										</div>
+										<span className="text-sm font-bold text-main">Napisz e-mail</span>
+									</a>
+								</div>
 							</div>
 						</div>
-					</div>
-				)}
+					)}
+				</div>
 			</div>
 		</Modal>
 	)

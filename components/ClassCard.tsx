@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ClassEvent } from '../types';
-import { MapPin, User, Users } from 'lucide-react';
+import { MapPin, User, Users, StickyNote } from 'lucide-react';
+import NotesModal from './NotesModal';
 
 interface ClassCardProps {
   event: ClassEvent;
@@ -12,6 +13,14 @@ interface ClassCardProps {
 
 const ClassCard: React.FC<ClassCardProps> = ({ event, isActive, isLast }) => {
   const navigate = useNavigate();
+  const [isNotesOpen, setIsNotesOpen] = useState(false);
+  const [currentSubject, setCurrentSubject] = useState('');
+
+  const handleNotesClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setCurrentSubject(event.subject);
+    setIsNotesOpen(true);
+  };
   
   // Swiss Style Pastel Palette
   const getColors = (type: string) => {
@@ -109,8 +118,24 @@ const ClassCard: React.FC<ClassCardProps> = ({ event, isActive, isLast }) => {
                          </div>
                      )}
                 </div>
+
+                <div className="mt-4 pt-3 border-t border-border/40 flex justify-end">
+                    <button
+                        onClick={handleNotesClick}
+                        className="flex items-center gap-1.5 text-xs font-medium text-muted hover:text-primary transition-colors py-1 px-2 hover:bg-hover rounded-lg"
+                    >
+                        <StickyNote size={14} />
+                        Notatki
+                    </button>
+                </div>
              </div>
         </div>
+
+        <NotesModal
+            isOpen={isNotesOpen}
+            onClose={() => setIsNotesOpen(false)}
+            subjectName={currentSubject}
+        />
     </div>
   );
 };

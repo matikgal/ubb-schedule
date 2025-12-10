@@ -18,6 +18,7 @@ import {
 	Grid,
 	RefreshCw,
 	ExternalLink,
+	StickyNote,
 } from 'lucide-react'
 import { fetchScheduleForWeek, getAvailableWeeks } from '../services/scheduleService'
 import { getSelectedGroup } from '../services/groupService'
@@ -32,6 +33,7 @@ import clsx from 'clsx'
 import CampusMapWidget from '../components/widgets/CampusMapWidget'
 import DeansOfficeWidget from '../components/widgets/DeansOfficeWidget'
 import DeansOfficeModal from '../components/DeansOfficeModal'
+import NotesModal from '../components/NotesModal'
 
 
 // --- Types ---
@@ -83,6 +85,10 @@ const Home: React.FC = () => {
 	const [newDeadlineDescription, setNewDeadlineDescription] = useState('')
 	const [selectedDeadline, setSelectedDeadline] = useState<Deadline | null>(null)
 	const [isDeansOfficeModalOpen, setIsDeansOfficeModalOpen] = useState(false)
+	
+	// Notes State
+	const [isNotesModalOpen, setIsNotesModalOpen] = useState(false)
+	const [selectedNoteSubject, setSelectedNoteSubject] = useState('')
 
 	const [toast, setToast] = useState<ToastState>({ show: false, message: '', type: 'success' })
 	const [confirmDialog, setConfirmDialog] = useState<ConfirmState>({ isOpen: false, title: '', message: '' })
@@ -408,6 +414,12 @@ const Home: React.FC = () => {
 		setTimeout(() => setToast(prev => ({ ...prev, show: false })), 2000)
 	}
 
+	const openNotes = (subject: string, e: React.MouseEvent) => {
+		e.stopPropagation()
+		setSelectedNoteSubject(subject)
+		setIsNotesModalOpen(true)
+	}
+
 	const handleAddDeadline = () => {
 		if (!newDeadlineTitle || !newDeadlineDate) {
 			showToast('Uzupełnij nazwę i datę', 'error')
@@ -710,6 +722,17 @@ const Home: React.FC = () => {
 														</div>
 													</div>
 
+													{/* Actions Row */}
+													<div className="flex gap-2 mb-3">
+														<button
+															onClick={(e) => openNotes(evt.subject, e)}
+															className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg bg-surface border border-border/50 text-xs font-medium hover:bg-hover active:scale-95 transition-all text-muted hover:text-primary"
+														>
+															<StickyNote size={12} />
+															Notatki
+														</button>
+													</div>
+
 													<div className="flex justify-between items-center text-xs font-medium text-muted mb-2">
 														<span>{evt.startTime}</span>
 														<span>{evt.endTime}</span>
@@ -954,42 +977,45 @@ const Home: React.FC = () => {
 				title="Nowy Deadline"
 			>
 				<div className="space-y-4">
-					<div>
-						<label className="text-xs font-bold text-muted uppercase ml-1 mb-1.5 block">Nazwa</label>
-						<input
-							type="text"
-							value={newDeadlineTitle}
-							onChange={e => setNewDeadlineTitle(e.target.value)}
-							className="w-full bg-background border border-border rounded-xl p-3 text-main outline-none focus:border-primary transition-colors"
-							placeholder="np. Projekt z Javy"
-							autoFocus
-						/>
+					<div className="p-6 space-y-6">
+						<div>
+							<label className="text-xs font-bold text-white/60 uppercase ml-1 mb-2 block">Nazwa</label>
+							<input
+								type="text"
+								value={newDeadlineTitle}
+								onChange={e => setNewDeadlineTitle(e.target.value)}
+								className="w-full bg-black/20 border border-white/10 rounded-2xl p-4 text-white placeholder:text-white/20 outline-none focus:border-primary/50 transition-colors"
+								placeholder="np. Projekt z Javy"
+								autoFocus
+							/>
+						</div>
+						<div>
+							<label className="text-xs font-bold text-white/60 uppercase ml-1 mb-2 block">Data</label>
+							<input
+								type="date"
+								value={newDeadlineDate}
+								onChange={e => setNewDeadlineDate(e.target.value)}
+								min={new Date().toISOString().split('T')[0]}
+								className="w-full bg-black/20 border border-white/10 rounded-2xl p-4 text-white outline-none focus:border-primary/50 transition-colors"
+							/>
+						</div>
+						<div>
+							<label className="text-xs font-bold text-white/60 uppercase ml-1 mb-2 block">Opis (opcjonalnie)</label>
+							<textarea
+								value={newDeadlineDescription}
+								onChange={e => setNewDeadlineDescription(e.target.value)}
+								className="w-full bg-black/20 border border-white/10 rounded-2xl p-4 text-white placeholder:text-white/20 outline-none focus:border-primary/50 transition-colors resize-none"
+								placeholder="Dodatkowe informacje..."
+								rows={3}
+							/>
+						</div>
+						<button
+							onClick={handleAddDeadline}
+							className="w-full py-4 bg-primary text-black rounded-2xl font-bold text-lg shadow-lg shadow-primary/20 hover:bg-primary-hover active:scale-[0.98] transition-all"
+						>
+							Dodaj deadline
+						</button>
 					</div>
-					<div>
-						<label className="text-xs font-bold text-muted uppercase ml-1 mb-1.5 block">Data</label>
-						<input
-							type="date"
-							value={newDeadlineDate}
-							onChange={e => setNewDeadlineDate(e.target.value)}
-							min={new Date().toISOString().split('T')[0]}
-							className="w-full bg-background border border-border rounded-xl p-3 text-main outline-none focus:border-primary transition-colors"
-						/>
-					</div>
-					<div>
-						<label className="text-xs font-bold text-muted uppercase ml-1 mb-1.5 block">Opis (opcjonalnie)</label>
-						<textarea
-							value={newDeadlineDescription}
-							onChange={e => setNewDeadlineDescription(e.target.value)}
-							className="w-full bg-background border border-border rounded-xl p-3 text-main outline-none focus:border-primary transition-colors resize-none"
-							placeholder="Dodatkowe informacje..."
-							rows={3}
-						/>
-					</div>
-					<button
-						onClick={handleAddDeadline}
-						className="w-full bg-primary text-black font-bold py-3.5 rounded-xl mt-2 hover:opacity-90 transition-opacity">
-						Dodaj
-					</button>
 				</div>
 			</Modal>
 
@@ -997,27 +1023,27 @@ const Home: React.FC = () => {
 			<Modal
 				isOpen={isAllDeadlinesOpen}
 				onClose={() => setIsAllDeadlinesOpen(false)}
-				title="Wszystkie Deadline'y"
 			>
-				<div className="grid grid-cols-2 gap-3 pb-4">
+				<div className="grid grid-cols-2 gap-3 px-6 pb-6 pt-2">
 					{deadlines.map(dl => {
 						const colorClass = getDeadlineColor(dl.date)
 						return (
 							<div
 								key={dl.id}
-								className={`aspect-square rounded-2xl p-3 flex flex-col justify-between border ${colorClass} relative group overflow-hidden`}>
+								className={`aspect-square rounded-2xl p-4 flex flex-col justify-between border relative group overflow-hidden transition-all ${colorClass} hover:opacity-90`}
+							>
 								<div
-									className="absolute top-0 right-0 w-16 h-16 rounded-full -mr-8 -mt-8 pointer-events-none opacity-10"
+									className="absolute top-0 right-0 w-24 h-24 rounded-full -mr-10 -mt-10 pointer-events-none opacity-20"
 									style={{ backgroundColor: 'currentColor' }}></div>
 
 								<div className="flex justify-between items-start relative z-10">
-									<span className="text-[10px] font-bold uppercase opacity-70">
+									<span className="text-xs font-bold uppercase opacity-80 tracking-wide">
 										{new Date(dl.date).toLocaleDateString('pl-PL', { day: 'numeric', month: 'short' })}
 									</span>
 								</div>
 								<div className="relative z-10">
-									<h4 className="font-bold text-sm leading-tight line-clamp-2 mb-1">{dl.title}</h4>
-									<p className="text-[10px] font-medium opacity-80">{getDaysLeft(dl.date)}</p>
+									<h4 className="font-bold text-sm leading-tight line-clamp-3 mb-1.5">{dl.title}</h4>
+									<p className="text-[10px] font-bold opacity-80 uppercase tracking-wider">{getDaysLeft(dl.date)}</p>
 								</div>
 
 								<button
@@ -1025,7 +1051,7 @@ const Home: React.FC = () => {
 										e.stopPropagation()
 										initiateDeleteDeadline(dl.id)
 									}}
-									className="absolute bottom-2 right-2 p-2 text-current opacity-70 hover:opacity-100 hover:scale-110 transition-all rounded-full hover:bg-background/10 z-10">
+									className="absolute bottom-3 right-3 p-2 text-current opacity-60 hover:opacity-100 hover:scale-110 transition-all rounded-full hover:bg-black/10 z-20">
 									<Trash2 size={16} />
 								</button>
 							</div>
@@ -1037,11 +1063,11 @@ const Home: React.FC = () => {
 							setIsAllDeadlinesOpen(false)
 							setIsDeadlineModalOpen(true)
 						}}
-						className="aspect-square rounded-2xl bg-surface border-2 border-dashed border-border hover:border-primary/50 hover:bg-primary/5 flex flex-col items-center justify-center gap-2 text-muted hover:text-primary transition-all group">
-						<div className="w-10 h-10 rounded-full bg-background border border-border flex items-center justify-center group-hover:border-primary/50 group-hover:scale-110 transition-all">
-							<Plus size={20} />
+						className="aspect-square rounded-2xl bg-white/5 border-2 border-dashed border-white/10 hover:border-primary/50 hover:bg-primary/5 flex flex-col items-center justify-center gap-3 text-muted hover:text-primary transition-all group">
+						<div className="w-12 h-12 rounded-full bg-white/5 border border-white/10 flex items-center justify-center group-hover:border-primary/50 group-hover:scale-110 transition-all shadow-lg">
+							<Plus size={24} />
 						</div>
-						<span className="text-xs font-bold">Dodaj</span>
+						<span className="text-xs font-bold uppercase tracking-wider">Dodaj</span>
 					</button>
 				</div>
 			</Modal>
@@ -1153,6 +1179,12 @@ const Home: React.FC = () => {
 				</div>,
 				document.body
 			)}
+
+			<NotesModal
+				isOpen={isNotesModalOpen}
+				onClose={() => setIsNotesModalOpen(false)}
+				subjectName={selectedNoteSubject}
+			/>
 
 			{/* Deans Office Modal */}
 			<DeansOfficeModal
