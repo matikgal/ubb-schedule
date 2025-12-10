@@ -23,7 +23,7 @@ const RoomProfile: React.FC<RoomProfileProps> = ({ roomId, roomName, faculty, on
     const loadInitialData = async () => {
       setIsLoading(true);
       try {
-        const weeks = await getAvailableWeeks(roomId, false, true); // isTeacher=false, isRoom=true
+        const weeks = await getAvailableWeeks(roomId, false, true); 
         setAvailableWeeks(weeks);
 
         if (weeks.length > 0) {
@@ -31,7 +31,7 @@ const RoomProfile: React.FC<RoomProfileProps> = ({ roomId, roomName, faculty, on
           const initialWeek = weeks.find(w => w.id === currentWeekId) || weeks[0];
           setCurrentWeek(initialWeek);
           
-          const schedule = await fetchScheduleForWeek(roomId, initialWeek.id, false, false, true); // isRoom=true
+          const schedule = await fetchScheduleForWeek(roomId, initialWeek.id, false, false, true); 
           setEvents(schedule);
         }
       } catch (err) {
