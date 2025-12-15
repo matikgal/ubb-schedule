@@ -15,6 +15,7 @@ interface ScheduleViewerProps {
 	onNextWeek: () => void
 	onDateSelect: (date: Date) => void
 	header?: React.ReactNode
+	allowNotes?: boolean
 }
 
 const ScheduleViewer: React.FC<ScheduleViewerProps> = ({
@@ -27,6 +28,7 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({
 	onNextWeek,
 	onDateSelect,
 	header,
+	allowNotes = true,
 }) => {
 	const [expandedDayIndex, setExpandedDayIndex] = useState<number | null>(null)
 	const [showToast, setShowToast] = useState(false)
@@ -99,7 +101,7 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({
 					</div>
 				)}
 				{header && <div />} {/* Spacer if header is present but custom */}
-				
+
 				<div className="relative ml-auto">
 					<button
 						onClick={openDatePicker}
@@ -253,20 +255,17 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({
 						return (
 							<div
 								key={dayOffset}
-								className={`rounded-2xl border transition-all duration-300 overflow-hidden ${
-									isExpanded ? 'bg-surface border-border' : 'bg-transparent border-transparent'
-								}`}>
+								className={`rounded-2xl border transition-all duration-300 overflow-hidden ${isExpanded ? 'bg-surface border-border' : 'bg-transparent border-transparent'
+									}`}>
 								{/* Accordion Header */}
 								<button
 									onClick={() => toggleDay(dayOffset)}
-									className={`w-full flex items-center justify-between p-4 transition-colors ${
-										!isExpanded && 'hover:bg-hover rounded-2xl'
-									}`}>
+									className={`w-full flex items-center justify-between p-4 transition-colors ${!isExpanded && 'hover:bg-hover rounded-2xl'
+										}`}>
 									<div className="flex items-center gap-4">
 										<div
-											className={`flex flex-col items-center justify-center w-10 h-10 rounded-xl border ${
-												isToday ? 'bg-primary text-black border-primary' : 'bg-surface border-border text-muted'
-											}`}>
+											className={`flex flex-col items-center justify-center w-10 h-10 rounded-xl border ${isToday ? 'bg-primary text-black border-primary' : 'bg-surface border-border text-muted'
+												}`}>
 											<span className="text-[10px] font-bold uppercase leading-none">
 												{getDayName(apiDayOfWeek === 7 ? 0 : apiDayOfWeek).substring(0, 3)}
 											</span>
@@ -328,7 +327,12 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({
 										{hasClasses ? (
 											<div className="space-y-0">
 												{dayEvents.map((evt, idx) => (
-													<ClassCard key={evt.id} event={evt} isLast={idx === dayEvents.length - 1} />
+													<ClassCard
+														key={evt.id}
+														event={evt}
+														isLast={idx === dayEvents.length - 1}
+														allowNotes={allowNotes}
+													/>
 												))}
 											</div>
 										) : (

@@ -133,7 +133,7 @@ const DeansOfficeModal: React.FC<DeansOfficeModalProps> = ({ isOpen, onClose }) 
 		>
 			<div className="flex flex-col h-full p-6">
 				{selectedOffice && (
-					<button 
+					<button
 						onClick={() => setSelectedOffice(null)}
 						className="mb-6 flex items-center gap-2 text-sm text-primary font-bold hover:gap-3 transition-all w-fit group"
 					>
@@ -152,12 +152,12 @@ const DeansOfficeModal: React.FC<DeansOfficeModalProps> = ({ isOpen, onClose }) 
 									className="w-full p-5 border border-white/10 bg-white/5 rounded-2xl text-left transition-all hover:bg-white/10 hover:border-white/20 hover:scale-[1.02] group shadow-sm active:scale-95"
 								>
 									<div className="flex justify-between items-center mb-1">
-										<span className="font-bold text-main group-hover:text-primary transition-colors pr-4 text-sm leading-relaxed">
+										<span className="font-bold text-white group-hover:text-primary transition-colors pr-4 text-sm leading-relaxed">
 											{office.name}
 										</span>
-										<ChevronRight size={18} className="text-muted/50 group-hover:text-primary transition-colors flex-shrink-0" />
+										<ChevronRight size={18} className="text-white/60 group-hover:text-primary transition-colors flex-shrink-0" />
 									</div>
-									<div className="flex items-center gap-2 text-xs text-muted/70">
+									<div className="flex items-center gap-2 text-xs text-white/50">
 										<MapPin size={12} />
 										<span>{office.location}</span>
 									</div>
@@ -173,21 +173,21 @@ const DeansOfficeModal: React.FC<DeansOfficeModalProps> = ({ isOpen, onClose }) 
 										<MapPin size={24} />
 									</div>
 									<div>
-										<h4 className="text-xs font-bold text-muted uppercase tracking-wider mb-1">Lokalizacja</h4>
-										<p className="text-main font-medium">{selectedOffice.location}</p>
+										<h4 className="text-xs font-bold text-white/60 uppercase tracking-wider mb-1">Lokalizacja</h4>
+										<p className="text-white font-medium">{selectedOffice.location}</p>
 									</div>
 								</div>
 							</div>
 
 							{/* Hours */}
 							<div className="space-y-4">
-								<h4 className="text-sm font-bold text-muted uppercase tracking-wider flex items-center gap-2">
+								<h4 className="text-sm font-bold text-white/60 uppercase tracking-wider flex items-center gap-2">
 									<Clock size={16} /> Godziny otwarcia
 								</h4>
 								<div className="space-y-2">
 									{selectedOffice.hours.map((h, idx) => (
 										<div key={idx} className="flex justify-between items-center p-4 bg-white/5 rounded-2xl border border-white/5 hover:bg-white/10 transition-colors">
-											<span className="font-medium text-main text-sm">{h.day}</span>
+											<span className="font-medium text-white text-sm">{h.day}</span>
 											<span className={`font-bold text-sm ${h.time === 'Zamknięte' ? 'text-red-400' : 'text-primary'}`}>
 												{h.time}
 											</span>
@@ -199,7 +199,7 @@ const DeansOfficeModal: React.FC<DeansOfficeModalProps> = ({ isOpen, onClose }) 
 							{/* Staff */}
 							{selectedOffice.staff.length > 0 && (
 								<div className="space-y-4">
-									<h4 className="text-sm font-bold text-muted uppercase tracking-wider flex items-center gap-2">
+									<h4 className="text-sm font-bold text-white/60 uppercase tracking-wider flex items-center gap-2">
 										<User size={16} /> Władze Wydziału
 									</h4>
 									<div className="space-y-3">
@@ -209,9 +209,9 @@ const DeansOfficeModal: React.FC<DeansOfficeModalProps> = ({ isOpen, onClose }) 
 													<span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-1 rounded-md mb-2 inline-block">
 														{person.role}
 													</span>
-													<span className="font-bold text-main block text-lg">{person.name}</span>
+													<span className="font-bold text-white block text-lg">{person.name}</span>
 												</div>
-												<div className="text-sm text-muted/80 pl-2 border-l-2 border-white/10">
+												<div className="text-sm text-white/70 pl-2 border-l-2 border-white/10">
 													{person.hours}
 												</div>
 											</div>
@@ -222,27 +222,27 @@ const DeansOfficeModal: React.FC<DeansOfficeModalProps> = ({ isOpen, onClose }) 
 
 							{/* Contact */}
 							<div className="space-y-4">
-								<h4 className="text-sm font-bold text-muted uppercase tracking-wider flex items-center gap-2">
+								<h4 className="text-sm font-bold text-white/60 uppercase tracking-wider flex items-center gap-2">
 									<Phone size={16} /> Kontakt
 								</h4>
 								<div className="grid grid-cols-2 gap-3">
-									<a 
-										href={`tel:${selectedOffice.contact.phone}`} 
+									<a
+										href={`tel:${selectedOffice.contact.phone}`}
 										className="p-4 bg-white/5 border border-white/10 rounded-2xl flex flex-col items-center justify-center gap-3 hover:bg-primary/10 hover:border-primary/30 transition-all active:scale-95 group"
 									>
 										<div className="p-2 rounded-full bg-white/5 group-hover:bg-primary/20 transition-colors">
 											<Phone size={20} className="text-primary" />
 										</div>
-										<span className="text-sm font-bold text-main text-center">{selectedOffice.contact.phone}</span>
+										<span className="text-sm font-bold text-white text-center">{selectedOffice.contact.phone}</span>
 									</a>
-									<a 
-										href={`mailto:${selectedOffice.contact.email}`} 
+									<a
+										href={`mailto:${selectedOffice.contact.email}`}
 										className="p-4 bg-white/5 border border-white/10 rounded-2xl flex flex-col items-center justify-center gap-3 hover:bg-primary/10 hover:border-primary/30 transition-all active:scale-95 group"
 									>
 										<div className="p-2 rounded-full bg-white/5 group-hover:bg-primary/20 transition-colors">
 											<Mail size={20} className="text-primary" />
 										</div>
-										<span className="text-sm font-bold text-main">Napisz e-mail</span>
+										<span className="text-sm font-bold text-white">Napisz e-mail</span>
 									</a>
 								</div>
 							</div>

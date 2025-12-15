@@ -66,9 +66,10 @@ const Home: React.FC = () => {
 	const [currentClassIndex, setCurrentClassIndex] = useState<number>(0)
 	const swiperRef = useRef<any>(null)
 	const dateInputRef = useRef<HTMLInputElement>(null)
+	const deadlineInputRef = useRef<HTMLInputElement>(null)
 	const [isDemo, setIsDemo] = useState(false)
 	const [minutesNow, setMinutesNow] = useState(getCurrentTimeMinutes())
-	
+
 	// Countdown State
 	const [countdownString, setCountdownString] = useState<string>('')
 
@@ -85,7 +86,7 @@ const Home: React.FC = () => {
 	const [newDeadlineDescription, setNewDeadlineDescription] = useState('')
 	const [selectedDeadline, setSelectedDeadline] = useState<Deadline | null>(null)
 	const [isDeansOfficeModalOpen, setIsDeansOfficeModalOpen] = useState(false)
-	
+
 	// Notes State
 	const [isNotesModalOpen, setIsNotesModalOpen] = useState(false)
 	const [selectedNoteSubject, setSelectedNoteSubject] = useState('')
@@ -99,7 +100,7 @@ const Home: React.FC = () => {
 	const [isLoadingSchedule, setIsLoadingSchedule] = useState(true)
 	const [isTransitioning, setIsTransitioning] = useState(false)
 	const [isRefreshing, setIsRefreshing] = useState(false)
-	
+
 	// Week handling
 	const [availableWeeks, setAvailableWeeks] = useState<Array<{ id: string; label: string; start: Date; end: Date }>>([])
 	const [loadedWeekId, setLoadedWeekId] = useState<string | null>(null)
@@ -116,7 +117,7 @@ const Home: React.FC = () => {
 		}
 
 		setIsDemo(false)
-		
+
 		// 1. Load available weeks if not loaded
 		let weeks = availableWeeks
 		if (weeks.length === 0 || forceRefresh) {
@@ -203,7 +204,7 @@ const Home: React.FC = () => {
 	// Pull to Refresh Logic
 	useEffect(() => {
 		let startY = 0
-		
+
 		const handleTouchStart = (e: TouchEvent) => {
 			if (window.scrollY === 0) {
 				startY = e.touches[0].clientY
@@ -263,20 +264,30 @@ const Home: React.FC = () => {
 		let calculatedIdx = 0
 		let foundActive = false
 
-		todaysEvents.forEach((evt, idx) => {
+		for (let idx = 0; idx < todaysEvents.length; idx++) {
+			const evt = todaysEvents[idx]
 			const start = getMinutesFromMidnight(evt.startTime)
 			const end = getMinutesFromMidnight(evt.endTime)
 
+			// If current time is BEFORE this event
+			if (now < start) {
+				if (!foundActive) {
+					calculatedIdx = idx
+					setProgress(0) // Reset progress for upcoming class
+				}
+				break // Stop checking, this is the upcoming one
+			}
+
+			// If current time is WITHIN this event
 			if (now >= start && now < end) {
 				calculatedIdx = idx
 				foundActive = true
 				const totalDuration = end - start
 				const elapsed = now - start
 				setProgress((elapsed / totalDuration) * 100)
-			} else if (now < start && !foundActive) {
-				if (!foundActive) calculatedIdx = idx
+				break
 			}
-		})
+		}
 
 		if (
 			now > getMinutesFromMidnight(todaysEvents[todaysEvents.length - 1]?.endTime || '00:00') &&
@@ -327,19 +338,39 @@ const Home: React.FC = () => {
 			const currentEvent = todaysEvents[currentClassIndex]
 
 			if (currentEvent && currentClassIndex < todaysEvents.length) {
-				// Parse End Time
+				const [startHour, startMin] = currentEvent.startTime.split(':').map(Number)
 				const [endHour, endMin] = currentEvent.endTime.split(':').map(Number)
+
+				const startTime = new Date()
+				startTime.setHours(startHour, startMin, 0, 0)
+
 				const endTime = new Date()
 				endTime.setHours(endHour, endMin, 0, 0)
 
-				const diff = endTime.getTime() - now.getTime()
+				// Check if class hasn't started yet
+				if (now < startTime) {
+					const diff = startTime.getTime() - now.getTime()
+					if (diff > 0) {
+						const minutes = Math.floor((diff / 1000 / 60) % 60)
+						const seconds = Math.floor((diff / 1000) % 60)
+						const hours = Math.floor(diff / (1000 * 60 * 60))
 
-				if (diff > 0) {
-					const minutes = Math.floor((diff / 1000 / 60) % 60)
-					const seconds = Math.floor((diff / 1000) % 60)
-					setCountdownString(`${minutes}:${seconds.toString().padStart(2, '0')}`)
+						if (hours > 0) {
+							setCountdownString(`${hours}h ${minutes}m`)
+						} else {
+							setCountdownString(`${minutes}:${seconds.toString().padStart(2, '0')}`)
+						}
+					}
 				} else {
-					setCountdownString('')
+					// Class is running
+					const diff = endTime.getTime() - now.getTime()
+					if (diff > 0) {
+						const minutes = Math.floor((diff / 1000 / 60) % 60)
+						const seconds = Math.floor((diff / 1000) % 60)
+						setCountdownString(`${minutes}:${seconds.toString().padStart(2, '0')}`)
+					} else {
+						setCountdownString('')
+					}
 				}
 			} else {
 				setCountdownString('')
@@ -431,7 +462,7 @@ const Home: React.FC = () => {
 		today.setHours(0, 0, 0, 0)
 		const selectedDateObj = new Date(newDeadlineDate)
 		selectedDateObj.setHours(0, 0, 0, 0)
-		
+
 		if (selectedDateObj.getTime() < today.getTime()) {
 			showToast('Nie można dodać deadline w przeszłości', 'error')
 			return
@@ -505,10 +536,10 @@ const Home: React.FC = () => {
 		target.setHours(0, 0, 0, 0)
 		const today = new Date()
 		today.setHours(0, 0, 0, 0)
-		
+
 		const diffTime = target.getTime() - today.getTime()
 		const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-		
+
 		if (diffDays < 0) return 'bg-slate-500/10 text-muted border-slate-500/20'
 		if (diffDays <= 3) return 'bg-red-500/10 text-red-500 border-red-500/20'
 		if (diffDays <= 7) return 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20'
@@ -520,16 +551,16 @@ const Home: React.FC = () => {
 		target.setHours(0, 0, 0, 0)
 		const today = new Date()
 		today.setHours(0, 0, 0, 0)
-		
+
 		const diffTime = target.getTime() - today.getTime()
 		const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24))
-		
+
 		if (diffDays < 0) return 'Po terminie'
 		if (diffDays === 0) return 'Dziś'
 		if (diffDays === 1) return 'Jutro'
 		return `${diffDays} dni`
 	}
-	
+
 	const getClassColor = (type: string) => {
 		const t = type.toLowerCase()
 		if (t.includes('wykład')) return 'border-lecture/30 shadow-lecture/10'
@@ -538,7 +569,7 @@ const Home: React.FC = () => {
 		if (t.includes('sem')) return 'border-seminar/30 shadow-seminar/10'
 		return 'border-border/50'
 	}
-	
+
 	const getClassBadgeColor = (type: string) => {
 		return 'text-white/90 bg-white/10 border-white/20'
 	}
@@ -561,13 +592,12 @@ const Home: React.FC = () => {
 		<div className="space-y-6 animate-fade-in relative">
 			{/* Refresh Indicator */}
 			{/* Refresh Indicator */}
-			<div 
-				className={`flex justify-center overflow-hidden transition-all duration-300 ease-in-out ${
-					isRefreshing ? 'max-h-12 py-2 opacity-100' : 'max-h-0 py-0 opacity-0'
-				}`}>
+			<div
+				className={`flex justify-center overflow-hidden transition-all duration-300 ease-in-out ${isRefreshing ? 'max-h-12 py-2 opacity-100' : 'max-h-0 py-0 opacity-0'
+					}`}>
 				<RefreshCw className="animate-spin text-primary" size={20} />
 			</div>
-			
+
 			{/* --- Header --- */}
 			<div className="px-1 flex items-start justify-between">
 				<div>
@@ -577,11 +607,10 @@ const Home: React.FC = () => {
 					</span>
 				</div>
 				<div
-					className={`px-3 py-1.5 rounded-full text-xs font-bold ${
-						timeRange
-							? 'bg-primary/10 text-primary border border-primary/20'
-							: 'bg-muted/10 text-muted border border-muted/20'
-					}`}>
+					className={`px-3 py-1.5 rounded-full text-xs font-bold ${timeRange
+						? 'bg-primary/10 text-primary border border-primary/20'
+						: 'bg-muted/10 text-muted border border-muted/20'
+						}`}>
 					{timeRange ? `${timeRange.start} - ${timeRange.end}` : 'Brak zajęć'}
 				</div>
 			</div>
@@ -658,11 +687,20 @@ const Home: React.FC = () => {
 									const isActive = idx === activeIndex
 									const isCurrentClass = isTodayView && idx === currentClassIndex
 									const isPast = isTodayView && idx < currentClassIndex
-									const endTimeMins = getMinutesFromMidnight(evt.endTime)
-									const minutesLeft = endTimeMins - minutesNow
-									
 									const semanticBorder = getClassColor(evt.type)
 									const badgeStyle = getClassBadgeColor(evt.type)
+
+									let isPendingStart = false
+									let isRunning = false
+
+									if (isCurrentClass) {
+										const now = getCurrentTimeMinutes()
+										// Re-check detailed status for UI labels
+										const start = getMinutesFromMidnight(evt.startTime)
+										const end = getMinutesFromMidnight(evt.endTime)
+										if (now < start) isPendingStart = true
+										if (now >= start && now < end) isRunning = true
+									}
 
 									return (
 										<SwiperSlide key={evt.id} style={{ width: '78vw', maxWidth: '340px' }}>
@@ -673,23 +711,21 @@ const Home: React.FC = () => {
 														isActive ? `shadow-2xl ${semanticBorder}` : 'border-border/50 shadow-md'
 													)}>
 													<div
-														className={`absolute -top-10 -right-10 w-32 h-32 bg-primary rounded-full pointer-events-none transition-opacity duration-300 blur-2xl ${
-															isActive ? 'opacity-20' : 'opacity-5'
-														}`}></div>
+														className={`absolute -top-10 -right-10 w-32 h-32 bg-primary rounded-full pointer-events-none transition-opacity duration-300 blur-2xl ${isActive ? 'opacity-20' : 'opacity-5'
+															}`}></div>
 
 													{isTodayView && (
 														<div className="mb-3 flex justify-between items-center">
 															<span
-																className={`inline-block px-2.5 py-1 rounded text-[10px] font-bold uppercase tracking-wide ${
-																	isCurrentClass ? 'bg-primary text-black' : 'bg-slate-500/10 text-muted'
-																}`}>
-																{isCurrentClass ? 'Teraz' : isPast ? 'Koniec' : 'Wkrótce'}
+																className={`inline-block px-2.5 py-1 rounded text-[10px] font-bold uppercase tracking-wide ${isRunning ? 'bg-primary text-black' : isPendingStart ? 'bg-blue-500/10 text-blue-400' : isPast ? 'bg-slate-500/10 text-muted' : 'bg-slate-500/10 text-muted'
+																	}`}>
+																{isRunning ? 'Teraz' : isPendingStart ? 'Wkrótce' : isPast ? 'Koniec' : idx > currentClassIndex ? 'Nadchodzące' : 'Zajęcia'}
 															</span>
-															
+
 															{/* Countdown for current class */}
 															{isCurrentClass && countdownString && (
 																<span className="text-xs font-bold text-primary animate-pulse">
-																	Koniec za {countdownString}
+																	{isPendingStart ? 'Początek za ' : 'Koniec za '} {countdownString}
 																</span>
 															)}
 														</div>
@@ -697,9 +733,8 @@ const Home: React.FC = () => {
 
 													<div className="flex items-start gap-2 mb-3">
 														<h3
-															className={`text-lg font-display font-bold leading-tight flex-1 ${
-																isActive ? 'text-primary' : 'text-main'
-															}`}>
+															className={`text-lg font-display font-bold leading-tight flex-1 ${isActive ? 'text-primary' : 'text-main'
+																}`}>
 															{evt.subject}
 														</h3>
 														<span
@@ -738,7 +773,7 @@ const Home: React.FC = () => {
 														<span>{evt.endTime}</span>
 													</div>
 
-													{isCurrentClass && (
+													{isCurrentClass && isRunning && (
 														<div className="h-1 w-full bg-slate-500/10 rounded-full overflow-hidden">
 															<div
 																className="h-full bg-primary transition-all duration-1000 ease-linear"
@@ -787,9 +822,8 @@ const Home: React.FC = () => {
 										<button
 											key={idx}
 											onClick={() => swiperRef.current?.slideTo(idx)}
-											className={`transition-all duration-300 rounded-full ${
-												idx === activeIndex ? 'w-8 h-2 bg-primary' : 'w-2 h-2 bg-slate-500/50 hover:bg-primary/50'
-											}`}
+											className={`transition-all duration-300 rounded-full ${idx === activeIndex ? 'w-8 h-2 bg-primary' : 'w-2 h-2 bg-slate-500/50 hover:bg-primary/50'
+												}`}
 											aria-label={`Przejdź do zajęć ${idx + 1}`}
 										/>
 									))}
@@ -873,9 +907,9 @@ const Home: React.FC = () => {
 								<div className="relative z-10">
 									<h4 className="font-bold text-sm leading-tight line-clamp-1 mb-0.5">{dl.title}</h4>
 									{dl.description && (
-									<p className="text-[9px] opacity-60 line-clamp-1 mb-0.5">{dl.description}</p>
-								)}
-								<p className="text-[10px] font-medium opacity-80">{getDaysLeft(dl.date)}</p>
+										<p className="text-[9px] opacity-60 line-clamp-1 mb-0.5">{dl.description}</p>
+									)}
+									<p className="text-[10px] font-medium opacity-80">{getDaysLeft(dl.date)}</p>
 								</div>
 
 								<button
@@ -907,13 +941,13 @@ const Home: React.FC = () => {
 					<h3 className="text-lg font-display font-bold text-main">Na skróty</h3>
 					<div className="w-8 h-1 bg-primary/20 rounded-full"></div>
 				</div>
-				
+
 				<div className="grid grid-cols-2 gap-3 h-40">
 					{/* Campus Map Widget */}
 					<div className="col-span-1 h-full">
 						<CampusMapWidget />
 					</div>
-					
+
 					{/* Deans Office Widget (Replaces Calculator) */}
 					<div className="col-span-1 h-full">
 						<DeansOfficeWidget onClick={() => setIsDeansOfficeModalOpen(true)} />
@@ -936,7 +970,7 @@ const Home: React.FC = () => {
 						</div>
 
 						<div className="space-y-3 relative z-10 flex-1">
-							<a href="https://usosweb.ubb.edu.pl/" target="_blank" rel="noopener noreferrer" 
+							<a href="https://usosweb.ubb.edu.pl/" target="_blank" rel="noopener noreferrer"
 								className="flex items-start gap-3 p-2 -mx-2 rounded-lg active:bg-hover/50">
 								<div className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0 bg-blue-500"></div>
 								<div className="flex-1 min-w-0">
@@ -969,7 +1003,7 @@ const Home: React.FC = () => {
 			</section>
 
 			{/* --- Modals --- */}
-			
+
 			{/* Add Deadline Modal */}
 			<Modal
 				isOpen={isDeadlineModalOpen}
@@ -991,13 +1025,19 @@ const Home: React.FC = () => {
 						</div>
 						<div>
 							<label className="text-xs font-bold text-white/60 uppercase ml-1 mb-2 block">Data</label>
-							<input
-								type="date"
-								value={newDeadlineDate}
-								onChange={e => setNewDeadlineDate(e.target.value)}
-								min={new Date().toISOString().split('T')[0]}
-								className="w-full bg-black/20 border border-white/10 rounded-2xl p-4 text-white outline-none focus:border-primary/50 transition-colors"
-							/>
+							<div className="relative cursor-pointer" onClick={() => deadlineInputRef.current?.showPicker()}>
+								<div className="absolute top-4 right-4 text-white pointer-events-none opacity-60">
+									<Calendar size={20} />
+								</div>
+								<input
+									ref={deadlineInputRef}
+									type="date"
+									value={newDeadlineDate}
+									onChange={e => setNewDeadlineDate(e.target.value)}
+									min={new Date().toISOString().split('T')[0]}
+									className="w-full bg-black/20 border border-white/10 rounded-2xl p-4 text-white outline-none focus:border-primary/50 transition-colors [&::-webkit-calendar-picker-indicator]:opacity-0"
+								/>
+							</div>
 						</div>
 						<div>
 							<label className="text-xs font-bold text-white/60 uppercase ml-1 mb-2 block">Opis (opcjonalnie)</label>
@@ -1057,7 +1097,7 @@ const Home: React.FC = () => {
 							</div>
 						)
 					})}
-					
+
 					<button
 						onClick={() => {
 							setIsAllDeadlinesOpen(false)
@@ -1083,9 +1123,9 @@ const Home: React.FC = () => {
 						<div className={`p-4 rounded-xl border ${getDeadlineColor(selectedDeadline.date)}`}>
 							<div className="flex justify-between items-start mb-2">
 								<span className="text-xs font-bold uppercase opacity-70">
-									{new Date(selectedDeadline.date).toLocaleDateString('pl-PL', { 
+									{new Date(selectedDeadline.date).toLocaleDateString('pl-PL', {
 										weekday: 'long',
-										day: 'numeric', 
+										day: 'numeric',
 										month: 'long',
 										year: 'numeric'
 									})}
@@ -1127,10 +1167,10 @@ const Home: React.FC = () => {
 									<p className="text-[10px] text-muted">{dl.date}</p>
 								</div>
 								<div className="flex gap-2">
-								<button 
-									onClick={() => deleteFromArchive(dl.id)}
-									className="p-2 text-muted active:text-red-500 active:bg-red-500/10 rounded-lg transition-colors"
-									title="Usuń trwale">
+									<button
+										onClick={() => deleteFromArchive(dl.id)}
+										className="p-2 text-muted active:text-red-500 active:bg-red-500/10 rounded-lg transition-colors"
+										title="Usuń trwale">
 										<Trash2 size={16} />
 									</button>
 								</div>
@@ -1153,12 +1193,12 @@ const Home: React.FC = () => {
 								<p className="text-sm text-muted mt-1">{confirmDialog.message}</p>
 							</div>
 							<div className="grid grid-cols-2 gap-3 w-full mt-2">
-								<button 
+								<button
 									onClick={() => setConfirmDialog({ ...confirmDialog, isOpen: false })}
 									className="py-2.5 rounded-xl border border-border text-main font-bold text-sm hover:bg-hover transition-colors">
 									Anuluj
 								</button>
-								<button 
+								<button
 									onClick={confirmDelete}
 									className="py-2.5 rounded-xl bg-red-500 text-white font-bold text-sm hover:bg-red-600 transition-colors">
 									Potwierdź

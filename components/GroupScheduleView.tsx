@@ -7,9 +7,10 @@ import ScheduleViewer from './ScheduleViewer'
 interface GroupScheduleViewProps {
 	group: GroupInfo
 	onBack: () => void
+	allowNotes?: boolean
 }
 
-const GroupScheduleView: React.FC<GroupScheduleViewProps> = ({ group, onBack }) => {
+const GroupScheduleView: React.FC<GroupScheduleViewProps> = ({ group, onBack, allowNotes = true }) => {
 	const [events, setEvents] = useState<ClassEvent[]>([])
 	const [currentWeekId, setCurrentWeekId] = useState<string | null>(null)
 	const [availableWeeks, setAvailableWeeks] = useState<Array<{ id: string; label: string; start: Date; end: Date }>>([])
@@ -66,7 +67,7 @@ const GroupScheduleView: React.FC<GroupScheduleViewProps> = ({ group, onBack }) 
 
 	const handlePrevWeek = () => {
 		if (!currentWeekId || availableWeeks.length === 0) return
-		
+
 		const currentIndex = availableWeeks.findIndex(w => w.id === currentWeekId)
 		if (currentIndex > 0) {
 			setCurrentWeekId(availableWeeks[currentIndex - 1].id)
@@ -78,12 +79,12 @@ const GroupScheduleView: React.FC<GroupScheduleViewProps> = ({ group, onBack }) 
 
 	const handleNextWeek = () => {
 		if (availableWeeks.length === 0) return
-		
+
 		if (!currentWeekId) {
 			setCurrentWeekId(availableWeeks[0].id)
 			return
 		}
-		
+
 		const currentIndex = availableWeeks.findIndex(w => w.id === currentWeekId)
 		if (currentIndex < availableWeeks.length - 1) {
 			setCurrentWeekId(availableWeeks[currentIndex + 1].id)
@@ -104,7 +105,7 @@ const GroupScheduleView: React.FC<GroupScheduleViewProps> = ({ group, onBack }) 
 		<div className="animate-fade-in space-y-6">
 			{/* Header with Back Button */}
 			<div className="flex items-start gap-4">
-				<button 
+				<button
 					onClick={onBack}
 					className="p-2 -ml-2 hover:bg-hover rounded-full transition-colors mt-1"
 				>
@@ -136,6 +137,7 @@ const GroupScheduleView: React.FC<GroupScheduleViewProps> = ({ group, onBack }) 
 					onPrevWeek={handlePrevWeek}
 					onNextWeek={handleNextWeek}
 					onDateSelect={handleDateSelect}
+					allowNotes={allowNotes}
 					header={
 						<div className="flex items-center gap-2 mb-4">
 							<Calendar size={20} className="text-primary" />

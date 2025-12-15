@@ -105,17 +105,17 @@ const SearchPage: React.FC = () => {
 		}
 
 		const query = searchQuery.toLowerCase()
-		
-		const filteredTeachers = teachers.filter(teacher => 
+
+		const filteredTeachers = teachers.filter(teacher =>
 			teacher.name.toLowerCase().includes(query)
 		)
 
-		const filteredRooms = rooms.filter(room => 
+		const filteredRooms = rooms.filter(room =>
 			room.name.toLowerCase().includes(query)
 		)
 
 		// Combine and sort results
-		const combined = [...filteredTeachers, ...filteredRooms].sort((a, b) => 
+		const combined = [...filteredTeachers, ...filteredRooms].sort((a, b) =>
 			a.name.localeCompare(b.name)
 		)
 
@@ -160,6 +160,7 @@ const SearchPage: React.FC = () => {
 			<GroupScheduleView
 				group={selectedGroup}
 				onBack={() => setSelectedGroup(null)}
+				allowNotes={false}
 			/>
 		)
 	}
@@ -189,7 +190,7 @@ const SearchPage: React.FC = () => {
 						className="w-full p-2 outline-none text-main bg-transparent placeholder:text-muted text-sm"
 					/>
 					{searchQuery && (
-						<button 
+						<button
 							onClick={handleClearSearch}
 							className="p-3 text-muted hover:text-main transition-colors"
 						>
@@ -217,11 +218,10 @@ const SearchPage: React.FC = () => {
 									className="w-full p-4 bg-surface border border-border rounded-xl flex items-center justify-between hover:border-primary/50 transition-all group text-left"
 								>
 									<div className="flex items-center gap-3">
-										<div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-											item.type === 'teacher' 
-												? 'bg-primary/10 text-primary' 
+										<div className={`w-10 h-10 rounded-full flex items-center justify-center ${item.type === 'teacher'
+												? 'bg-primary/10 text-primary'
 												: 'bg-emerald-500/10 text-emerald-500'
-										}`}>
+											}`}>
 											{item.type === 'teacher' ? <Users size={20} /> : <MapPin size={20} />}
 										</div>
 										<div>
@@ -285,7 +285,7 @@ const SearchPage: React.FC = () => {
 					<div className="bg-surface border border-border rounded-2xl w-full max-w-md p-6 shadow-xl animate-scale-in">
 						<div className="flex justify-between items-center mb-4">
 							<h2 className="text-xl font-bold text-main">Wybierz grupę</h2>
-							<button 
+							<button
 								onClick={() => setIsAmbiguousGroupModalOpen(false)}
 								className="p-2 hover:bg-hover rounded-full transition-colors text-muted"
 							>
