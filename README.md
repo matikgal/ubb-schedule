@@ -1,4 +1,4 @@
-# 📱 UniSchedule - Plan zajęć UBB
+# UniSchedule - Plan zajęć UBB
 
 Aplikacja mobilna z planem zajęć dla Uniwersytetu Bielsko-Bialskiego.
 
@@ -6,7 +6,7 @@ Aplikacja mobilna z planem zajęć dla Uniwersytetu Bielsko-Bialskiego.
 
 ---
 
-## 🚀 Szybki start
+## Szybki start
 
 ### Testuj na telefonie:
 
@@ -28,19 +28,19 @@ npm run dev
 
 ---
 
-## ✨ Funkcje
+## Funkcje
 
-- ✅ **Offline-first** - działa bez internetu po pierwszym uruchomieniu
-- ✅ **Plan zajęć** - przeglądaj zajęcia dla swojej grupy
-- ✅ **Deadline'y** - zarządzaj terminami
-- ✅ **Kalkulator średniej** - obliczaj średnią ocen
-- ✅ **Mapa kampusu** - znajdź sale
-- ✅ **Tryb ciemny** - personalizacja
-- ✅ **Nieograniczona przestrzeń** - Capacitor Preferences
+- **Offline-first** - działa bez internetu po pierwszym uruchomieniu
+- **Plan zajęć** - przeglądaj zajęcia dla swojej grupy
+- **Deadline'y** - zarządzaj terminami
+- **Kalkulator średniej** - obliczaj średnią ocen
+- **Mapa kampusu** - znajdź sale
+- **Tryb ciemny** - personalizacja
+- **Nieograniczona przestrzeń** - Capacitor Preferences
 
 ---
 
-## 📚 Dokumentacja
+## Dokumentacja
 
 **Zacznij tutaj:** [START.md](./START.md) lub [GOTOWE.md](./GOTOWE.md)
 
@@ -53,7 +53,7 @@ npm run dev
 
 ---
 
-## 🛠️ Technologie
+## Technologie
 
 - **React** + **TypeScript**
 - **Vite**
@@ -63,7 +63,7 @@ npm run dev
 
 ---
 
-## 📦 Instalacja
+## Instalacja
 
 ```bash
 # Zainstaluj zależności
@@ -81,7 +81,7 @@ npx cap open android
 
 ---
 
-## 🎯 Komendy
+## Komendy
 
 ```bash
 npm run dev              # Uruchom w przeglądarce
@@ -93,7 +93,7 @@ npm run android:run      # Uruchom na telefonie
 
 ---
 
-## 📱 Wymagania
+## Wymagania
 
 - **Node.js** (v18+)
 - **Android Studio** (do testowania/budowania)
@@ -101,37 +101,37 @@ npm run android:run      # Uruchom na telefonie
 
 ---
 
-## 🎉 Status
+## Status
 
-✅ **Aplikacja jest w 100% gotowa!**
+**Aplikacja jest w 100% gotowa!**
 
-- ✅ Kompiluje się bez błędów
-- ✅ Działa w przeglądarce
-- ✅ Działa na Androidzie
-- ✅ Offline-first działa
-- ✅ Gotowa do testowania
-- ✅ Gotowa do publikacji w Google Play
+- Kompiluje się bez błędów
+- Działa w przeglądarce
+- Działa na Androidzie
+- Offline-first działa
+- Gotowa do testowania
+- Gotowa do publikacji w Google Play
 
 ---
 
-## 👥 Autorzy
+## Autorzy
 
 - **Aplikacja:** Mateusz Gałuszka
 - **Scraper danych:** Jakub Gałosz
 
 ---
 
-## 📄 Licencja
+## Licencja
 
 Dane planu zajęć są własnością Uniwersytetu Bielsko-Bialskiego.
 
 ---
 
-## 🔗 Linki
+## Linki
 
 - **Źródło danych:** https://plany.ubb.edu.pl/
 - **UBB:** https://ubb.edu.pl/
 
 ---
 
-**Gotowy do testowania?** Otwórz [START.md](./START.md)! 🚀
+**Gotowy do testowania?** Otwórz [START.md](./START.md)!
