@@ -31,8 +31,6 @@ const LecturerProfile: React.FC<LecturerProfileProps> = ({ teacherId, teacherNam
 			return
 		}
 
-		// console.log('👤 LecturerProfile mounted:', { teacherId, teacherName, email, phone, office })
-
 		const loadWeeks = async () => {
 			const weeks = await getAvailableWeeks(teacherId, true)
 			setAvailableWeeks(weeks)
@@ -78,7 +76,7 @@ const LecturerProfile: React.FC<LecturerProfileProps> = ({ teacherId, teacherNam
 
 	const handlePrevWeek = () => {
 		if (!currentWeekId || availableWeeks.length === 0) return
-		
+
 		const currentIndex = availableWeeks.findIndex(w => w.id === currentWeekId)
 		if (currentIndex > 0) {
 			setCurrentWeekId(availableWeeks[currentIndex - 1].id)
@@ -90,12 +88,12 @@ const LecturerProfile: React.FC<LecturerProfileProps> = ({ teacherId, teacherNam
 
 	const handleNextWeek = () => {
 		if (availableWeeks.length === 0) return
-		
+
 		if (!currentWeekId) {
 			setCurrentWeekId(availableWeeks[0].id)
 			return
 		}
-		
+
 		const currentIndex = availableWeeks.findIndex(w => w.id === currentWeekId)
 		if (currentIndex < availableWeeks.length - 1) {
 			setCurrentWeekId(availableWeeks[currentIndex + 1].id)
@@ -116,7 +114,7 @@ const LecturerProfile: React.FC<LecturerProfileProps> = ({ teacherId, teacherNam
 		<div className="animate-fade-in space-y-6">
 			{/* Header with Back Button */}
 			<div className="flex items-start gap-4">
-				<button 
+				<button
 					onClick={onBack}
 					className="p-2 -ml-2 hover:bg-hover rounded-full transition-colors mt-1"
 				>

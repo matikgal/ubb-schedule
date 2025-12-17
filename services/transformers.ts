@@ -131,18 +131,6 @@ export async function transformSupabaseToClassEvents(
     const specificGroup = item.group_name;
     const groups = specificGroup ? [specificGroup] : (defaultGroup ? [defaultGroup] : []);
 
-    // DEBUG: Log transformation details
-    // if (index < 3) { // Log only first few items to avoid spam
-    //    console.log('Transforming item:', {
-    //        subject: item.subject,
-    //        teacherId: item.teacher_id,
-    //        teacherName,
-    //        defaultGroup,
-    //        itemGroupName: item.group_name,
-    //        resultGroups: groups
-    //    });
-    // }
-
     return {
       id: `${item.week_id}-${dayOfWeek}-${index}`,
       subject: cleanedSubject,

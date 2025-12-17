@@ -208,7 +208,6 @@ const SearchPage: React.FC = () => {
 								<button
 									key={`${item.type}-${item.id}`}
 									onClick={() => {
-										// console.log('👉 Selected item:', item)
 										if (item.type === 'teacher') {
 											setSelectedLecturer(item)
 										} else if (item.type === 'room') {
@@ -219,8 +218,8 @@ const SearchPage: React.FC = () => {
 								>
 									<div className="flex items-center gap-3">
 										<div className={`w-10 h-10 rounded-full flex items-center justify-center ${item.type === 'teacher'
-												? 'bg-primary/10 text-primary'
-												: 'bg-emerald-500/10 text-emerald-500'
+											? 'bg-primary/10 text-primary'
+											: 'bg-emerald-500/10 text-emerald-500'
 											}`}>
 											{item.type === 'teacher' ? <Users size={20} /> : <MapPin size={20} />}
 										</div>

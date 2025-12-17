@@ -176,7 +176,6 @@ export async function syncDatabase(force: boolean = false): Promise<void> {
             error: null,
             progress: 100,
         })
-        // console.log('Database synced successfully')
 
     } catch (error: any) {
         console.error('Sync failed:', error)

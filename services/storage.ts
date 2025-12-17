@@ -25,7 +25,6 @@ export const storage = {
 						// For now, let's try to clear everything to recover
 						localStorage.clear()
 						localStorage.setItem(key, value)
-						// console.log('✅ LocalStorage cleared and item saved.')
 					} catch (retryError) {
 						console.error('❌ Failed to save item even after clearing storage:', retryError)
 					}

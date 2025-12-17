@@ -20,8 +20,6 @@ export async function fetchScheduleForWeek(
 	try {
 		await ensureDB()
 
-		// console.log('🔍 Fetching from SQLite:', { entityId, weekId })
-
 		const row = execSingle(`
 			SELECT * FROM unified_schedules WHERE id = ?
 		`, [entityId])
@@ -47,9 +45,7 @@ export async function fetchScheduleForWeek(
 			actualWeekKey = weekId.toString()
 		}
 
-		// Handle virtual weeks (empty schedule)
 		if (actualWeekKey.startsWith('virtual_')) {
-			// console.log('👻 Returning empty schedule for virtual week')
 			return []
 		}
 
@@ -74,8 +70,6 @@ export async function fetchScheduleForWeek(
 				events.push(...dayEvents)
 			}
 		}
-
-		// console.log('✅ Schedule fetched:', events.length, 'events')
 
 		return events
 	} catch (error) {
@@ -146,12 +140,10 @@ export async function getCurrentWeekId(entityId: number, isTeacher: boolean = fa
 		weekEnd.setHours(23, 59, 59, 999)
 
 		if (today >= weekStart && today <= weekEnd) {
-			// console.log('📅 Found current week:', { weekId: week.id, label: week.label, today: today.toISOString() })
 			return week.id
 		}
 	}
 
-	// console.log('⚠️ Current week not found, defaulting to first:', weeks[0]?.label)
 	return weeks.length > 0 ? weeks[0].id : null
 }
 
