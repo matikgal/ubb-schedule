@@ -23,7 +23,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 	const [lastScrollY, setLastScrollY] = useState(0)
 	const [mousePos, setMousePos] = useState({ x: 0, y: 0 })
 	const [semesterInfo, setSemesterInfo] = useState<SemesterInfo | null>(null)
-	
+
 	// Get data from context to ensure live updates
 	const { nickname, avatarSeed } = useTheme()
 
@@ -46,7 +46,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 		const initApp = async () => {
 			// Start sync in background
 			syncDatabase()
-			
+
 			// Init notifications
 			try {
 				const { initNotifications } = await import('../services/notificationService')
@@ -54,7 +54,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 			} catch (e) {
 				console.error('Failed to init notifications', e)
 			}
-			
+
 			// Fetch semester info (will wait for DB init inside service)
 			const info = await fetchSemesterInfo()
 			setSemesterInfo(info)
@@ -118,18 +118,18 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 			{/* Floating Geometric Shapes (Background) - Parallax */}
 			<div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
 				{/* Large Orb */}
-				<div 
+				<div
 					className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] rounded-full bg-blue-500/5 blur-[120px] transition-transform duration-100 ease-out will-change-transform"
-					style={{ 
-						transform: `translate(${mousePos.x * -20}px, ${mousePos.y * -20}px)` 
+					style={{
+						transform: `translate(${mousePos.x * -20}px, ${mousePos.y * -20}px)`
 					}}
 				></div>
-				
+
 				{/* Secondary Orb (Opposite movement) */}
-				<div 
+				<div
 					className="absolute bottom-[-10%] right-[-10%] w-[400px] h-[400px] rounded-full bg-purple-500/5 blur-[100px] transition-transform duration-100 ease-out will-change-transform"
-					style={{ 
-						transform: `translate(${mousePos.x * 15}px, ${mousePos.y * 15}px)` 
+					style={{
+						transform: `translate(${mousePos.x * 15}px, ${mousePos.y * 15}px)`
 					}}
 				></div>
 			</div>
@@ -185,15 +185,15 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 			{/* Floating Modern Navigation (Stable) */}
 			<nav
 				className="fixed bottom-6 left-0 right-0 mx-auto z-50 w-[96%] max-w-lg"
-				style={{ 
+				style={{
 					paddingBottom: 'env(safe-area-inset-bottom)'
 				}}>
 				<div className="bg-[#1a1d24]/95 backdrop-blur-2xl border border-white/10 rounded-2xl p-2 flex items-center justify-between shadow-2xl shadow-black/50 relative overflow-hidden">
 					{navItems.map(item => {
 						const isActive = location.pathname === item.path
 						return (
-							<button 
-								key={item.path} 
+							<button
+								key={item.path}
 								onClick={() => handleNavClick(item.path)}
 								className="relative flex-1 h-14 flex flex-col items-center justify-center outline-none group"
 							>
@@ -205,16 +205,16 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 										transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
 									/>
 								)}
-								
+
 								{/* Icon */}
 								<span className="relative z-10 flex items-center justify-center">
-									<item.icon 
-										size={26} 
+									<item.icon
+										size={26}
 										strokeWidth={isActive ? 2.5 : 2}
 										className={clsx(
 											"transition-all duration-300",
-											isActive 
-												? 'text-primary drop-shadow-[0_0_8px_rgba(var(--primary),0.5)] scale-110' 
+											isActive
+												? 'text-primary drop-shadow-[0_0_8px_rgba(var(--primary),0.5)] scale-110'
 												: 'text-muted group-hover:text-white'
 										)}
 									/>
