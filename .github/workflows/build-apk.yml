@@ -32,8 +32,8 @@ jobs:
       
       - name: Create .env file
         run: |
-          echo "VITE_SUPABASE_URL=${{ vars.VITE_SUPABASE_URL }}" >> .env
-          echo "VITE_SUPABASE_ANON_KEY=${{ vars.VITE_SUPABASE_ANON_KEY }}" >> .env
+          echo "VITE_SUPABASE_URL=https://daggpycmiyhanizbzbpi.supabase.co" >> .env
+          echo "VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRhZ2dweWNtaXloYW5pemJ6YnBpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQzMzczMTcsImV4cCI6MjA3OTkxMzMxN30.lEeThsre2OacBBWWoclNCEB8tTjpOTB2AXiTmMl0Ms0" >> .env
       
       - name: Verify env vars
         run: |
