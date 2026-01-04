@@ -102,4 +102,5 @@ Projekt udostępniony na licencji MIT. Zobacz plik [LICENSE](LICENSE) po więcej
 ## Autorzy
 
 <br>
-_Stworzone przez Mateusz Gałuszka i Jakub Gałuszka_
+Stworzone przez 
+Mateusz Gałuszka i Jakub Gałuszka
