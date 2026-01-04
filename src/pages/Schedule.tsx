@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react'
-import { ClassEvent } from '../types'
-import { addDays } from '../utils'
-import OfflineBadge from '../components/OfflineBadge'
-import { fetchScheduleForWeek } from '../services/scheduleService'
-import { getSelectedGroup } from '../services/groupService'
-import { ERROR_MESSAGES } from '../constants/errorMessages'
-import { useOnlineStatus } from '../hooks/useOnlineStatus'
-import ScheduleViewer from '../components/ScheduleViewer'
+import { ClassEvent } from '@/types'
+import { addDays } from '@/lib/utils'
+import OfflineBadge from '@/components/ui/OfflineBadge'
+import { fetchScheduleForWeek } from '@/services/scheduleService'
+import { getSelectedGroup } from '@/services/groupService'
+import { ERROR_MESSAGES } from '@/constants/errorMessages'
+import { useOnlineStatus } from '@/hooks/useOnlineStatus'
+import ScheduleViewer from '@/components/features/ScheduleViewer'
 
 const SchedulePage: React.FC = () => {
 	const [events, setEvents] = useState<ClassEvent[]>([])
@@ -26,7 +26,7 @@ const SchedulePage: React.FC = () => {
 			const selectedGroup = await getSelectedGroup()
 			if (!selectedGroup) return
 
-			const { getAvailableWeeks, getCurrentWeekId } = await import('../services/scheduleService')
+			const { getAvailableWeeks, getCurrentWeekId } = await import('@/services/scheduleService')
 			const isTeacher = selectedGroup.type === 'teacher'
 			const weeks = await getAvailableWeeks(selectedGroup.id, isTeacher)
 			setAvailableWeeks(weeks)

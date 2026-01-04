@@ -1,6 +1,6 @@
 import { supabase } from './supabaseClient'
 import { getDB, saveDB, initDB, execSingle } from './db'
-import { UnifiedScheduleRow, SemesterInfo } from '../types'
+import { UnifiedScheduleRow, SemesterInfo } from '@/types'
 
 export interface SyncStatus {
     isSyncing: boolean

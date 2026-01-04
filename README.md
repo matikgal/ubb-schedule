@@ -47,17 +47,23 @@ npm run android:sync
 
 ```
 ubb-schedule/
-├── android/                # Pliki natywne Android
-├── components/             # Komponenty UI (Layout, Preloader, Modals)
-├── context/                # React Context (stan aplikacji)
-├── hooks/                  # Custom Hooks
-├── pages/                  # Strony aplikacji (Home, Schedule, Settings)
-├── public/                 # Pliki statyczne (assets)
-├── services/               # Logika biznesowa i integracja z API
-├── types/                  # Definicje TypeScript
-├── App.tsx                 # Główny komponent aplikacji
-├── index.css               # Style globalne TailwindCSS
-├── index.tsx               # Punkt wejścia
+├── android/                 # Pliki natywne Android
+├── public/                  # Pliki statyczne (assets)
+├── src/                     # Kod źródłowy aplikacji
+│   ├── components/          # Komponenty UI i funkcjonalne
+│   │   ├── features/        # Komponenty domenowe (Widgets, Views)
+│   │   ├── layout/          # Układ strony (Layout wrapper)
+│   │   └── ui/              # Komponenty bazowe (Atomic Design)
+│   ├── constants/           # Stałe i konfiguracja
+│   ├── context/             # Stan globalny
+│   ├── hooks/               # Custom Hooks
+│   ├── lib/                 # Biblioteki i utility
+│   ├── pages/               # Widoki (Home, Schedule, Settings, Search)
+│   ├── services/            # API i logika biznesowa
+│   ├── types/               # Typy TypeScript
+│   ├── App.tsx
+│   ├── index.css
+│   └── index.tsx
 ├── package.json
 ├── tsconfig.json
 └── vite.config.ts
@@ -93,8 +99,7 @@ Projekt udostępniony na licencji MIT. Zobacz plik [LICENSE](LICENSE) po więcej
 
 ---
 
-## Kontakt
+## Autorzy
 
-**Email:** mateusz.galuszka21@gmail.com
 <br>
-_Stworzone przez Mateusz Gałuszka_
+_Stworzone przez Mateusz Gałuszka i Jakub Gałuszka_

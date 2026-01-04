@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { ArrowLeft, Users, GraduationCap, Calendar } from 'lucide-react'
-import { ClassEvent, GroupInfo } from '../types'
-import { fetchScheduleForWeek, getAvailableWeeks, getCurrentWeekId } from '../services/scheduleService'
+import { ClassEvent, GroupInfo } from '@/types'
+import { fetchScheduleForWeek, getAvailableWeeks, getCurrentWeekId } from '@/services/scheduleService'
 import ScheduleViewer from './ScheduleViewer'
 
 interface GroupScheduleViewProps {

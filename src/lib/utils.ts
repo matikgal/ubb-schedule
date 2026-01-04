@@ -1,4 +1,4 @@
-import { ClassEvent } from "./types";
+import { ClassEvent } from '@/types';
 
 export const getMinutesFromMidnight = (timeStr: string): number => {
   const [hours, minutes] = timeStr.split(':').map(Number);

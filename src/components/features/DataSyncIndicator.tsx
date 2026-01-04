@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Download, WifiOff, CheckCircle, AlertCircle } from 'lucide-react'
-import { getSyncStatus, subscribeToSyncStatus, SyncStatus } from '../services/syncService'
+import { getSyncStatus, subscribeToSyncStatus, SyncStatus } from '@/services/syncService'
 
 const DataSyncIndicator: React.FC = () => {
 	const [status, setStatus] = useState<SyncStatus>(getSyncStatus())

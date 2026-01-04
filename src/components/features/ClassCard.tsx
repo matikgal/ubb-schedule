@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ClassEvent } from '../types';
+import { ClassEvent } from '@/types';
 import { MapPin, User, Users, StickyNote } from 'lucide-react';
 import NotesModal from './NotesModal';
 

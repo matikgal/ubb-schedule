@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Home, Calendar, Search, Settings, User } from 'lucide-react'
-import { useTheme } from '../context/ThemeContext'
-import DataSyncIndicator from './DataSyncIndicator'
+import { useTheme } from '@/context/ThemeContext'
+import DataSyncIndicator from '@/components/features/DataSyncIndicator'
 import clsx from 'clsx'
 import { motion } from 'framer-motion'
-import { fetchSemesterInfo } from '../services/scheduleService'
-import { syncDatabase } from '../services/syncService'
-import { SemesterInfo } from '../types'
+import { fetchSemesterInfo } from '@/services/scheduleService'
+import { syncDatabase } from '@/services/syncService'
+import { SemesterInfo } from '@/types'
 
 interface LayoutProps {
 	children: React.ReactNode
@@ -31,7 +31,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 	useEffect(() => {
 		const checkGroupType = async () => {
 			try {
-				const { getSelectedGroup } = await import('../services/groupService')
+				const { getSelectedGroup } = await import('@/services/groupService')
 				const group = await getSelectedGroup()
 				setIsTeacher(group?.type === 'teacher')
 			} catch (error) {
@@ -49,7 +49,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
 			// Init notifications
 			try {
-				const { initNotifications } = await import('../services/notificationService')
+				const { initNotifications } = await import('@/services/notificationService')
 				await initNotifications()
 			} catch (e) {
 				console.error('Failed to init notifications', e)

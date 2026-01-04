@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react'
 import { X, ChevronRight, Check } from 'lucide-react'
-import { fetchFaculties, fetchMajorsForFaculty, fetchGroupsForMajor, saveSelectedGroup } from '../services/groupService'
-import { GroupInfo } from '../types'
-import Modal from './Modal'
+import { fetchFaculties, fetchMajorsForFaculty, fetchGroupsForMajor, saveSelectedGroup } from '@/services/groupService'
+import { GroupInfo } from '@/types'
+import Modal from '@/components/ui/Modal'
 
 interface GroupSelectorModalProps {
 	isOpen: boolean
@@ -104,7 +104,7 @@ const GroupSelectorModal: React.FC<GroupSelectorModalProps> = ({ isOpen, onClose
 		setLoading(true)
 		setError('')
 		try {
-			const { fetchAllTeachers } = await import('../services/groupService')
+			const { fetchAllTeachers } = await import('@/services/groupService')
 			const data = await fetchAllTeachers()
 			setTeachers(data)
 			setFilteredTeachers(data)
@@ -185,7 +185,7 @@ const GroupSelectorModal: React.FC<GroupSelectorModalProps> = ({ isOpen, onClose
 			setSelectedGroup(group)
 			try {
 				await saveSelectedGroup(group)
-				const { fetchScheduleForWeek } = await import('../services/scheduleService')
+				const { fetchScheduleForWeek } = await import('@/services/scheduleService')
 				await fetchScheduleForWeek(group.id, undefined, true, group.type === 'teacher')
 				onGroupSelected(group)
 				onClose()

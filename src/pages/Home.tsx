@@ -1,9 +1,9 @@
 import React, { useEffect, useState, useRef } from 'react'
 import { createPortal } from 'react-dom'
-import { ClassEvent } from '../types'
-import { getCurrentTimeMinutes, getMinutesFromMidnight, getDayName, isSameDay } from '../utils'
-import GroupSelectorModal from '../components/GroupSelectorModal'
-import Modal from '../components/Modal'
+import { ClassEvent } from '@/types'
+import { getCurrentTimeMinutes, getMinutesFromMidnight, getDayName, isSameDay } from '@/lib/utils'
+import GroupSelectorModal from '@/components/features/GroupSelectorModal'
+import Modal from '@/components/ui/Modal'
 import {
 	MapPin,
 	User,
@@ -20,8 +20,8 @@ import {
 	ExternalLink,
 	StickyNote,
 } from 'lucide-react'
-import { fetchScheduleForWeek, getAvailableWeeks } from '../services/scheduleService'
-import { getSelectedGroup } from '../services/groupService'
+import { fetchScheduleForWeek, getAvailableWeeks } from '@/services/scheduleService'
+import { getSelectedGroup } from '@/services/groupService'
 import { Swiper, SwiperSlide } from 'swiper/react'
 import { EffectCoverflow } from 'swiper/modules'
 import 'swiper/css'
@@ -30,10 +30,10 @@ import './Home.css'
 import clsx from 'clsx'
 
 // Widgets
-import CampusMapWidget from '../components/widgets/CampusMapWidget'
-import DeansOfficeWidget from '../components/widgets/DeansOfficeWidget'
-import DeansOfficeModal from '../components/DeansOfficeModal'
-import NotesModal from '../components/NotesModal'
+import CampusMapWidget from '@/components/features/widgets/CampusMapWidget'
+import DeansOfficeWidget from '@/components/features/widgets/DeansOfficeWidget'
+import DeansOfficeModal from '@/components/features/DeansOfficeModal'
+import NotesModal from '@/components/features/NotesModal'
 
 
 // --- Types ---
@@ -486,7 +486,7 @@ const Home: React.FC = () => {
 		showToast('Dodano deadline')
 
 		// Schedule notification
-		import('../services/notificationService').then(({ scheduleManualDeadline }) => {
+		import('@/services/notificationService').then(({ scheduleManualDeadline }) => {
 			scheduleManualDeadline(newDeadline.id, newDeadline.title, newDeadline.date, newDeadline.description)
 		})
 	}
@@ -517,7 +517,7 @@ const Home: React.FC = () => {
 			showToast('Przeniesiono do archiwum')
 
 			// Cancel notification
-			import('../services/notificationService').then(({ cancelDeadlineNotification }) => {
+			import('@/services/notificationService').then(({ cancelDeadlineNotification }) => {
 				cancelDeadlineNotification(itemToArchive.id)
 			})
 		}

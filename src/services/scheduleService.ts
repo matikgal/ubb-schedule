@@ -1,7 +1,7 @@
 import { execSingle, initDB } from './db'
-import { ClassEvent, UnifiedScheduleRow, SemesterInfo } from '../types'
+import { ClassEvent, UnifiedScheduleRow, SemesterInfo } from '@/types'
 import { transformSupabaseToClassEvents } from './transformers'
-import { ERROR_MESSAGES } from '../constants/errorMessages'
+import { ERROR_MESSAGES } from '@/constants/errorMessages'
 
 export { ERROR_MESSAGES }
 

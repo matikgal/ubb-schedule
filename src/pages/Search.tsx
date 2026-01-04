@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
 import { Search as SearchIcon, X, Users, ChevronRight, MapPin } from 'lucide-react'
-import { fetchAllTeachers, fetchAllRooms, findGroupsByName } from '../services/groupService'
-import { GroupInfo } from '../types'
-import LecturerProfile from '../components/LecturerProfile'
-import RoomProfile from '../components/RoomProfile'
-import GroupScheduleView from '../components/GroupScheduleView'
-import GroupSelectorModal from '../components/GroupSelectorModal'
-import OfflineBadge from '../components/OfflineBadge'
+import { fetchAllTeachers, fetchAllRooms, findGroupsByName } from '@/services/groupService'
+import { GroupInfo } from '@/types'
+import LecturerProfile from '@/components/features/LecturerProfile'
+import RoomProfile from '@/components/features/RoomProfile'
+import GroupScheduleView from '@/components/features/GroupScheduleView'
+import GroupSelectorModal from '@/components/features/GroupSelectorModal'
+import OfflineBadge from '@/components/ui/OfflineBadge'
 
 const SearchPage: React.FC = () => {
 	const location = useLocation()

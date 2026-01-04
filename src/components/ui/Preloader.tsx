@@ -17,7 +17,7 @@ const Preloader: React.FC<PreloaderProps> = ({ onFinish }) => {
 		const loadData = async () => {
 			try {
 				// Check for cached data to show "Last updated"
-				const { getSelectedGroup } = await import('../services/groupService')
+				const { getSelectedGroup } = await import('@/services/groupService')
 				const selectedGroup = await getSelectedGroup()
 
 				if (selectedGroup) {

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { ArrowLeft, User, GraduationCap, Mail, Phone, MapPin } from 'lucide-react'
-import { ClassEvent } from '../types'
-import { fetchScheduleForWeek, getAvailableWeeks, getCurrentWeekId } from '../services/scheduleService'
+import { ClassEvent } from '@/types'
+import { fetchScheduleForWeek, getAvailableWeeks, getCurrentWeekId } from '@/services/scheduleService'
 import ScheduleViewer from './ScheduleViewer'
 
 interface LecturerProfileProps {

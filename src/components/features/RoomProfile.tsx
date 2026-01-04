@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { ArrowLeft, MapPin } from 'lucide-react';
-import { fetchScheduleForWeek, getAvailableWeeks, getCurrentWeekId } from '../services/scheduleService';
-import { ClassEvent } from '../types';
+import { fetchScheduleForWeek, getAvailableWeeks, getCurrentWeekId } from '@/services/scheduleService';
+import { ClassEvent } from '@/types';
 import ScheduleViewer from './ScheduleViewer';
 
 interface RoomProfileProps {

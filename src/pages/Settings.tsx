@@ -15,9 +15,9 @@ import {
 	MessageSquare,
 	Send,
 } from 'lucide-react'
-import { THEME_COLORS, useTheme } from '../context/ThemeContext'
-import GroupSelectorModal from '../components/GroupSelectorModal'
-import Modal from '../components/Modal'
+import { THEME_COLORS, useTheme } from '@/context/ThemeContext'
+import GroupSelectorModal from '@/components/features/GroupSelectorModal'
+import Modal from '@/components/ui/Modal'
 
 const SettingsPage = () => {
 	const [groupData, setGroupData] = useState<any>(null)
@@ -34,7 +34,7 @@ const SettingsPage = () => {
 
 	useEffect(() => {
 		const loadGroup = async () => {
-			const { getSelectedGroup } = await import('../services/groupService')
+			const { getSelectedGroup } = await import('@/services/groupService')
 			const group = await getSelectedGroup()
 			setGroupData(group)
 
@@ -47,7 +47,7 @@ const SettingsPage = () => {
 	}, [])
 
 	const handleGroupSelected = async () => {
-		const { getSelectedGroup } = await import('../services/groupService')
+		const { getSelectedGroup } = await import('@/services/groupService')
 		const group = await getSelectedGroup()
 		setGroupData(group)
 
@@ -64,7 +64,7 @@ const SettingsPage = () => {
 	const navigate = useNavigate()
 
 	// Sync State
-	const [syncStatus, setSyncStatus] = useState<import('../services/syncService').SyncStatus>({
+	const [syncStatus, setSyncStatus] = useState<import('@/services/syncService').SyncStatus>({
 		isSyncing: false,
 		lastSync: null,
 		error: null,
@@ -73,7 +73,7 @@ const SettingsPage = () => {
 
 	useEffect(() => {
 		const loadSync = async () => {
-			const { subscribeToSyncStatus, getSyncStatus } = await import('../services/syncService')
+			const { subscribeToSyncStatus, getSyncStatus } = await import('@/services/syncService')
 			setSyncStatus(getSyncStatus())
 			const unsubscribe = subscribeToSyncStatus(status => {
 				setSyncStatus(status)
@@ -88,7 +88,7 @@ const SettingsPage = () => {
 	}, [])
 
 	const handleManualSync = async () => {
-		const { syncDatabase } = await import('../services/syncService')
+		const { syncDatabase } = await import('@/services/syncService')
 		syncDatabase(true)
 	}
 
@@ -111,7 +111,7 @@ const SettingsPage = () => {
 
 			// Wyczyść Capacitor Preferences (na mobile)
 			try {
-				const { storage } = await import('../services/storage')
+				const { storage } = await import('@/services/storage')
 				await storage.clear()
 			} catch (e) {
 				// Ignore if not on mobile

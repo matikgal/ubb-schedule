@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { ClassEvent } from '../types'
-import { getDayName, addDays, isSameDay } from '../utils'
+import { ClassEvent } from '@/types'
+import { getDayName, addDays, isSameDay } from '@/lib/utils'
 import { ChevronLeft, ChevronRight, Calendar, ChevronDown, ChevronUp, Clock } from 'lucide-react'
 import ClassCard from './ClassCard'
-import Toast from './Toast'
+import Toast from '@/components/ui/Toast'
 
 interface ScheduleViewerProps {
 	events: ClassEvent[]

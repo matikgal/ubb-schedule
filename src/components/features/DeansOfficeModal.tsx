@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { X, ChevronRight, Clock, Phone, Mail, MapPin, ArrowLeft, User } from 'lucide-react'
-import Modal from './Modal'
+import Modal from '@/components/ui/Modal'
 
 interface DeansOfficeModalProps {
 	isOpen: boolean

@@ -1,6 +1,6 @@
 import { execQuery, initDB } from './db'
-import { GroupInfo } from '../types'
-import { ERROR_MESSAGES } from '../constants/errorMessages'
+import { GroupInfo } from '@/types'
+import { ERROR_MESSAGES } from '@/constants/'
 
 // Helper to ensure DB is ready
 async function ensureDB() {

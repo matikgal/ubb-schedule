@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Plus, Trash2, StickyNote, PenLine } from 'lucide-react';
-import { Note, getNotes, saveNote, deleteNote } from '../services/notesService';
-import Modal from './Modal';
+import { Note, getNotes, saveNote, deleteNote } from '@/services/notesService';
+import Modal from '@/components/ui/Modal';
 
 interface NotesModalProps {
     isOpen: boolean;

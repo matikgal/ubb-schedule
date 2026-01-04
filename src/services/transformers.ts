@@ -1,4 +1,4 @@
-import { ClassEvent, ClassType, ClassItem } from '../types';
+import { ClassEvent, ClassType, ClassItem } from '@/types';
 import { supabase } from './supabaseClient';
 
 /**

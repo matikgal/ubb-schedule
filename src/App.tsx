@@ -1,15 +1,15 @@
 import React, { useState, useEffect, Suspense } from 'react'
 import { HashRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom'
-import Layout from './components/Layout'
-import Preloader from './components/Preloader'
-import GroupSelectorModal from './components/GroupSelectorModal'
+import Layout from '@/components/layout/Layout'
+import Preloader from '@/components/ui/Preloader'
+import GroupSelectorModal from '@/components/features/GroupSelectorModal'
 import { ChevronLeft } from 'lucide-react'
 
 // Lazy Load Pages
-const Home = React.lazy(() => import('./pages/Home'))
-const SearchPage = React.lazy(() => import('./pages/Search'))
-const SchedulePage = React.lazy(() => import('./pages/Schedule'))
-const SettingsPage = React.lazy(() => import('./pages/Settings'))
+const Home = React.lazy(() => import('@/pages/Home'))
+const SearchPage = React.lazy(() => import('@/pages/Search'))
+const SchedulePage = React.lazy(() => import('@/pages/Schedule'))
+const SettingsPage = React.lazy(() => import('@/pages/Settings'))
 
 const PrivacyPage = () => {
 	const navigate = useNavigate()
