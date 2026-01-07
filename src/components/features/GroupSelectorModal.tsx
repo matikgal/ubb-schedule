@@ -175,7 +175,7 @@ const GroupSelectorModal: React.FC<GroupSelectorModalProps> = ({ isOpen, onClose
 
 		if (currentStep === 'group' || currentStep === 'allTeachers') {
 			const group = tempSelection as GroupInfo
-			
+
 			if (mode === 'preview') {
 				onGroupSelected(group)
 				onClose()
@@ -273,11 +273,10 @@ const GroupSelectorModal: React.FC<GroupSelectorModalProps> = ({ isOpen, onClose
 							<div className="space-y-4">
 								<button
 									onClick={() => handleSelection('student')}
-									className={`w-full p-6 border rounded-3xl text-left transition-all group flex items-center justify-between ${
-										isSelected('student') 
-											? 'bg-primary border-primary text-black' 
+									className={`w-full p-6 border rounded-3xl text-left transition-all group flex items-center justify-between ${isSelected('student')
+											? 'bg-primary border-primary text-black'
 											: 'bg-white/5 hover:bg-white/10 border-white/10 text-white'
-									}`}>
+										}`}>
 									<div>
 										<span className="font-bold text-xl block mb-1">Student</span>
 										<span className={`text-sm ${isSelected('student') ? 'text-black/70' : 'text-white/50'}`}>Przeglądaj plany grup dziekańskich</span>
@@ -286,11 +285,10 @@ const GroupSelectorModal: React.FC<GroupSelectorModalProps> = ({ isOpen, onClose
 								</button>
 								<button
 									onClick={() => handleSelection('teacher')}
-									className={`w-full p-6 border rounded-3xl text-left transition-all group flex items-center justify-between ${
-										isSelected('teacher') 
-											? 'bg-primary border-primary text-black' 
+									className={`w-full p-6 border rounded-3xl text-left transition-all group flex items-center justify-between ${isSelected('teacher')
+											? 'bg-primary border-primary text-black'
 											: 'bg-white/5 hover:bg-white/10 border-white/10 text-white'
-									}`}>
+										}`}>
 									<div>
 										<span className="font-bold text-xl block mb-1">Wykładowca</span>
 										<span className={`text-sm ${isSelected('teacher') ? 'text-black/70' : 'text-white/50'}`}>Znajdź plan prowadzącego</span>
@@ -306,11 +304,10 @@ const GroupSelectorModal: React.FC<GroupSelectorModalProps> = ({ isOpen, onClose
 								<button
 									key={faculty}
 									onClick={() => handleSelection(faculty)}
-									className={`w-full p-5 border rounded-2xl text-left transition-all flex items-center justify-between ${
-										isSelected(faculty) 
-											? 'bg-primary border-primary text-black font-bold' 
+									className={`w-full p-5 border rounded-2xl text-left transition-all flex items-center justify-between ${isSelected(faculty)
+											? 'bg-primary border-primary text-black font-bold'
 											: 'bg-white/5 hover:bg-white/10 border-white/10 text-white font-medium'
-									}`}>
+										}`}>
 									<span>{faculty}</span>
 									{isSelected(faculty) && <Check size={20} />}
 								</button>
@@ -322,11 +319,10 @@ const GroupSelectorModal: React.FC<GroupSelectorModalProps> = ({ isOpen, onClose
 								<button
 									key={major}
 									onClick={() => handleSelection(major)}
-									className={`w-full p-5 border rounded-2xl text-left transition-all flex items-center justify-between ${
-										isSelected(major) 
-											? 'bg-primary border-primary text-black font-bold' 
+									className={`w-full p-5 border rounded-2xl text-left transition-all flex items-center justify-between ${isSelected(major)
+											? 'bg-primary border-primary text-black font-bold'
 											: 'bg-white/5 hover:bg-white/10 border-white/10 text-white font-medium'
-									}`}>
+										}`}>
 									<span>{major}</span>
 									{isSelected(major) && <Check size={20} />}
 								</button>
@@ -338,11 +334,10 @@ const GroupSelectorModal: React.FC<GroupSelectorModalProps> = ({ isOpen, onClose
 								<button
 									key={type.value}
 									onClick={() => handleSelection(type.value)}
-									className={`w-full p-5 border rounded-2xl text-left transition-all flex items-center justify-between ${
-										isSelected(type.value) 
-											? 'bg-primary border-primary text-black font-bold' 
+									className={`w-full p-5 border rounded-2xl text-left transition-all flex items-center justify-between ${isSelected(type.value)
+											? 'bg-primary border-primary text-black font-bold'
 											: 'bg-white/5 hover:bg-white/10 border-white/10 text-white font-medium'
-									}`}>
+										}`}>
 									<span>{type.label}</span>
 									{isSelected(type.value) && <Check size={20} />}
 								</button>
@@ -354,11 +349,10 @@ const GroupSelectorModal: React.FC<GroupSelectorModalProps> = ({ isOpen, onClose
 								<button
 									key={sem}
 									onClick={() => handleSelection(sem)}
-									className={`w-full p-5 border rounded-2xl text-left transition-all flex items-center justify-between ${
-										isSelected(sem) 
-											? 'bg-primary border-primary text-black font-bold' 
+									className={`w-full p-5 border rounded-2xl text-left transition-all flex items-center justify-between ${isSelected(sem)
+											? 'bg-primary border-primary text-black font-bold'
 											: 'bg-white/5 hover:bg-white/10 border-white/10 text-white font-medium'
-									}`}>
+										}`}>
 									<span>Semestr {sem}</span>
 									{isSelected(sem) && <Check size={20} />}
 								</button>
@@ -373,11 +367,10 @@ const GroupSelectorModal: React.FC<GroupSelectorModalProps> = ({ isOpen, onClose
 								<button
 									key={group.id}
 									onClick={() => handleSelection(group)}
-									className={`w-full p-5 border rounded-2xl text-left transition-all flex items-center justify-between ${
-										isSelected(group) 
-											? 'bg-primary border-primary text-black font-bold' 
+									className={`w-full p-5 border rounded-2xl text-left transition-all flex items-center justify-between ${isSelected(group)
+											? 'bg-primary border-primary text-black font-bold'
 											: 'bg-white/5 hover:bg-white/10 border-white/10 text-white font-medium'
-									}`}>
+										}`}>
 									<span>{group.name}</span>
 									{isSelected(group) && <Check size={20} />}
 								</button>
@@ -407,11 +400,10 @@ const GroupSelectorModal: React.FC<GroupSelectorModalProps> = ({ isOpen, onClose
 											<button
 												key={teacher.id}
 												onClick={() => handleSelection(teacher)}
-												className={`w-full p-4 border rounded-2xl text-left transition-all flex items-center justify-between ${
-													isSelected(teacher) 
-														? 'bg-primary border-primary text-black' 
+												className={`w-full p-4 border rounded-2xl text-left transition-all flex items-center justify-between ${isSelected(teacher)
+														? 'bg-primary border-primary text-black'
 														: 'bg-white/5 hover:bg-white/10 border-white/10 text-white'
-												}`}>
+													}`}>
 												<div>
 													<span className={`font-medium block ${isSelected(teacher) ? 'font-bold' : ''}`}>{teacher.name}</span>
 													<span className={`text-[11px] ${isSelected(teacher) ? 'text-black/70' : 'text-white/40'}`}>{teacher.faculty}</span>
@@ -441,11 +433,10 @@ const GroupSelectorModal: React.FC<GroupSelectorModalProps> = ({ isOpen, onClose
 					<button
 						onClick={handleConfirm}
 						disabled={!tempSelection}
-						className={`flex-1 py-4 px-6 rounded-2xl font-bold transition-all shadow-lg ${
-							tempSelection
+						className={`flex-1 py-4 px-6 rounded-2xl font-bold transition-all shadow-lg ${tempSelection
 								? 'bg-primary text-black shadow-primary/20 hover:bg-primary-hover'
 								: 'bg-white/5 text-white/20 border border-white/5 cursor-not-allowed'
-						}`}
+							}`}
 					>
 						Zatwierdź
 					</button>

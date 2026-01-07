@@ -78,7 +78,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const newMode = !isDarkMode;
     setIsDarkMode(newMode);
     localStorage.setItem('app-mode', newMode ? 'dark' : 'light');
-    
+
     if (newMode) {
       document.documentElement.classList.add('dark');
     } else {
@@ -97,10 +97,10 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   return (
-    <ThemeContext.Provider value={{ 
-      currentTheme, 
-      setTheme, 
-      isDarkMode, 
+    <ThemeContext.Provider value={{
+      currentTheme,
+      setTheme,
+      isDarkMode,
       toggleDarkMode,
       nickname,
       setNickname: updateNickname,
