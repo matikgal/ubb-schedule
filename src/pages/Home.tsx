@@ -1015,7 +1015,7 @@ const Home: React.FC = () => {
 				title="Nowy Deadline"
 			>
 				<div className="space-y-4">
-					<div className="p-6 space-y-6">
+					<div className="p-6 pt-8 space-y-6">
 						<div>
 							<label className="text-xs font-bold text-white/60 uppercase ml-1 mb-2 block">Nazwa</label>
 							<input

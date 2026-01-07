@@ -131,7 +131,7 @@ const DeansOfficeModal: React.FC<DeansOfficeModalProps> = ({ isOpen, onClose }) 
 			onClose={handleClose}
 			title={selectedOffice ? selectedOffice.name : 'Godziny dziekanatów'}
 		>
-			<div className="flex flex-col h-full p-6">
+			<div className="flex flex-col p-6">
 				{selectedOffice && (
 					<button
 						onClick={() => setSelectedOffice(null)}
@@ -142,7 +142,7 @@ const DeansOfficeModal: React.FC<DeansOfficeModalProps> = ({ isOpen, onClose }) 
 					</button>
 				)}
 
-				<div className="flex-1 overflow-y-auto space-y-4 -mr-2 pr-2 scrollbar-hide">
+				<div className="space-y-4 -mr-2 pr-2 scrollbar-hide">
 					{!selectedOffice ? (
 						<div className="space-y-3">
 							{offices.map(office => (

@@ -1,7 +1,6 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef, memo } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ChevronRight, X } from 'lucide-react'
 import { clsx, type ClassValue } from 'clsx'
 import { twMerge } from 'tailwind-merge'
 
@@ -16,20 +15,22 @@ interface ModalProps {
 	children: React.ReactNode
 	className?: string
 	scrollable?: boolean
-	hideCloseButton?: boolean
+	hideBackButton?: boolean
 }
 
 const modalTitleId = 'modal-title'
+const SWIPE_THRESHOLD = 80
 
-const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, className, scrollable = true, hideCloseButton = false }) => {
+const Modal: React.FC<ModalProps> = memo(({ isOpen, onClose, title, children, className, scrollable = true, hideBackButton = false }) => {
 	const [mounted, setMounted] = useState(false)
+	const touchStartX = useRef<number>(0)
+	const [swipeOffset, setSwipeOffset] = useState(0)
 
 	useEffect(() => {
 		setMounted(true)
 		return () => setMounted(false)
 	}, [])
 
-	// Scroll Lock
 	useEffect(() => {
 		if (isOpen) {
 			document.body.style.overflow = 'hidden'
@@ -41,66 +42,75 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, classNa
 		}
 	}, [isOpen])
 
+	const handleTouchStart = (e: React.TouchEvent) => {
+		touchStartX.current = e.touches[0].clientX
+	}
+
+	const handleTouchMove = (e: React.TouchEvent) => {
+		const diff = e.touches[0].clientX - touchStartX.current
+		if (diff > 0) {
+			setSwipeOffset(diff)
+		}
+	}
+
+	const handleTouchEnd = () => {
+		if (swipeOffset > SWIPE_THRESHOLD) {
+			onClose()
+		}
+		setSwipeOffset(0)
+	}
+
 	if (!mounted) return null
 
 	return createPortal(
-		<AnimatePresence>
+		<AnimatePresence mode="wait">
 			{isOpen && (
 				<>
-					{/* Backdrop */}
 					<motion.div
 						initial={{ opacity: 0 }}
 						animate={{ opacity: 1 }}
-						exit={{ opacity: 0, transition: { delay: 0.3, duration: 0.3 } }}
-						transition={{ duration: 0.3 }}
+						exit={{ opacity: 0 }}
+						transition={{ duration: 0.15 }}
 						onClick={onClose}
 						className="fixed inset-0 bg-black/70 z-[9998]"
+						style={{ willChange: 'opacity' }}
 					/>
 
 					<motion.div
 						key="modal-drawer"
 						initial={{ x: '100%' }}
-						animate={{ x: 0, transition: { duration: 0.25, ease: 'easeOut' } }}
-						exit={{ x: '100%', transition: { duration: 0.2, ease: 'easeIn' } }}
-						className="fixed inset-y-0 right-0 z-[9999] flex flex-col w-[90%] max-w-[600px] shadow-2xl"
-						style={{ height: '100dvh' }}
+						animate={{ x: swipeOffset }}
+						exit={{ x: '100%' }}
+						transition={{
+							type: 'tween',
+							duration: swipeOffset > 0 ? 0 : 0.2,
+							ease: 'easeOut'
+						}}
+						className="fixed inset-y-0 right-0 z-[9999] flex flex-col w-[90%] max-w-[600px]"
+						style={{
+							height: '100dvh',
+							willChange: 'transform',
+							transform: 'translateZ(0)',
+							backfaceVisibility: 'hidden'
+						}}
 						role="dialog"
 						aria-modal="true"
 						aria-labelledby={title ? modalTitleId : undefined}
+						onTouchStart={handleTouchStart}
+						onTouchMove={handleTouchMove}
+						onTouchEnd={handleTouchEnd}
 					>
 						<div
 							className={cn(
-								"flex-1 bg-surface border-l border-white/10 w-full h-full flex flex-col relative overflow-hidden shadow-[-20px_0_50px_0_rgba(0,0,0,0.3)]",
+								"flex-1 bg-surface border-l border-white/10 w-full h-full flex flex-col relative overflow-hidden shadow-2xl",
 								className
 							)}
 						>
-							{/* Close Handler / Header Area */}
-							<div className="flex items-center justify-between px-6 py-4 shrink-0 border-b border-white/5 mb-0 bg-surface/50">
-								<div className="flex items-center gap-3">
-									<button
-										onClick={onClose}
-										className="flex items-center gap-1 pl-2 pr-4 py-2 -ml-2 hover:bg-white/10 rounded-full transition-colors group active:scale-95"
-										aria-label="Zamknij panel"
-									>
-										<ChevronRight size={24} className="text-white/70 group-hover:text-white transition-colors" />
-										<span className="text-sm font-bold text-white/70 group-hover:text-white transition-colors">Wróć</span>
-									</button>
-									{title && (
-										<h3 id={modalTitleId} className="text-lg font-display font-bold text-white line-clamp-1 ml-2 border-l border-white/10 pl-4">{title}</h3>
-									)}
-								</div>
-
-								{!hideCloseButton && !title && (
-									<button
-										onClick={onClose}
-										className="p-2 hover:bg-white/5 rounded-full transition-colors"
-										aria-label="Zamknij panel"
-									>
-										<X size={20} className="text-muted" />
-									</button>
+							<div className="flex items-center justify-end px-6 py-4 shrink-0 border-b border-white/5 bg-surface/50">
+								{title && (
+									<h3 id={modalTitleId} className="text-lg font-display font-bold text-white line-clamp-1">{title}</h3>
 								)}
 							</div>
-
 
 							<div className={cn(
 								"flex-1 min-h-0 flex flex-col",
@@ -108,6 +118,17 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, classNa
 								"px-0 pb-0"
 							)}>
 								{children}
+
+								{!hideBackButton && (
+									<div className="p-6 pt-4">
+										<button
+											onClick={onClose}
+											className="w-full py-3 bg-white/5 border border-white/10 text-white/70 rounded-2xl font-medium text-sm hover:text-white hover:bg-white/10 active:scale-[0.98] transition-colors"
+										>
+											Wróć
+										</button>
+									</div>
+								)}
 							</div>
 						</div>
 					</motion.div>
@@ -116,6 +137,8 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, classNa
 		</AnimatePresence>,
 		document.body
 	)
-}
+})
+
+Modal.displayName = 'Modal'
 
 export default Modal
