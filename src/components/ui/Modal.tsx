@@ -106,14 +106,14 @@ const Modal: React.FC<ModalProps> = memo(({ isOpen, onClose, title, children, cl
 								className
 							)}
 						>
-							<div className="flex items-center justify-end px-6 py-4 shrink-0 border-b border-white/5 bg-surface/50">
+							<div className="flex items-center justify-end px-6 pt-14 pb-4 shrink-0 border-b border-white/5 bg-surface/50">
 								{title && (
 									<h3 id={modalTitleId} className="text-lg font-display font-bold text-white line-clamp-1">{title}</h3>
 								)}
 							</div>
 
 							<div className={cn(
-								"flex-1 min-h-0 flex flex-col",
+								"flex-1 min-h-0 flex flex-col pt-4",
 								scrollable ? "overflow-y-auto" : "overflow-hidden",
 								"px-0 pb-0"
 							)}>
