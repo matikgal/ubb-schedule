@@ -498,7 +498,7 @@ const SettingsPage = () => {
 			>
 				<div className="mt-8 text-center">
 					<p className="text-xs text-muted/50 font-mono">
-						v1.1.5
+						v1.1.6
 					</p>
 				</div>
 				<div className="space-y-4">

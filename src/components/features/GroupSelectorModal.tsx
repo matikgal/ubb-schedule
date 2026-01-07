@@ -244,9 +244,9 @@ const GroupSelectorModal: React.FC<GroupSelectorModalProps> = ({ isOpen, onClose
 			isOpen={isOpen}
 			onClose={onClose}
 			title={getStepTitle()}
-			className="h-full flex flex-col"
+			className="flex flex-col"
 		>
-			<div className="flex-1 overflow-y-auto px-6 pb-6">
+			<div className="px-6 pb-6">
 				{/* Progress Bar */}
 				<div className="mb-6 h-1 w-full bg-white/10 rounded-full overflow-hidden">
 					<div
@@ -274,26 +274,26 @@ const GroupSelectorModal: React.FC<GroupSelectorModalProps> = ({ isOpen, onClose
 								<button
 									onClick={() => handleSelection('student')}
 									className={`w-full p-6 border rounded-3xl text-left transition-all group flex items-center justify-between ${isSelected('student')
-											? 'bg-primary border-primary text-black'
-											: 'bg-white/5 hover:bg-white/10 border-white/10 text-white'
+										? 'bg-primary border-primary text-primary-foreground'
+										: 'bg-hover hover:bg-surface border-border text-main'
 										}`}>
 									<div>
 										<span className="font-bold text-xl block mb-1">Student</span>
-										<span className={`text-sm ${isSelected('student') ? 'text-black/70' : 'text-white/50'}`}>Przeglądaj plany grup dziekańskich</span>
+										<span className={`text-sm ${isSelected('student') ? 'text-primary-foreground/70' : 'text-muted'}`}>Przeglądaj plany grup dziekańskich</span>
 									</div>
-									{isSelected('student') && <Check size={28} className="text-black" />}
+									{isSelected('student') && <Check size={28} className="text-primary-foreground" />}
 								</button>
 								<button
 									onClick={() => handleSelection('teacher')}
 									className={`w-full p-6 border rounded-3xl text-left transition-all group flex items-center justify-between ${isSelected('teacher')
-											? 'bg-primary border-primary text-black'
-											: 'bg-white/5 hover:bg-white/10 border-white/10 text-white'
+										? 'bg-primary border-primary text-primary-foreground'
+										: 'bg-hover hover:bg-surface border-border text-main'
 										}`}>
 									<div>
 										<span className="font-bold text-xl block mb-1">Wykładowca</span>
-										<span className={`text-sm ${isSelected('teacher') ? 'text-black/70' : 'text-white/50'}`}>Znajdź plan prowadzącego</span>
+										<span className={`text-sm ${isSelected('teacher') ? 'text-primary-foreground/70' : 'text-muted'}`}>Znajdź plan prowadzącego</span>
 									</div>
-									{isSelected('teacher') && <Check size={28} className="text-black" />}
+									{isSelected('teacher') && <Check size={28} className="text-primary-foreground" />}
 								</button>
 							</div>
 						)}
@@ -305,8 +305,8 @@ const GroupSelectorModal: React.FC<GroupSelectorModalProps> = ({ isOpen, onClose
 									key={faculty}
 									onClick={() => handleSelection(faculty)}
 									className={`w-full p-5 border rounded-2xl text-left transition-all flex items-center justify-between ${isSelected(faculty)
-											? 'bg-primary border-primary text-black font-bold'
-											: 'bg-white/5 hover:bg-white/10 border-white/10 text-white font-medium'
+										? 'bg-primary border-primary text-primary-foreground font-bold'
+										: 'bg-hover hover:bg-surface border-border text-main font-medium'
 										}`}>
 									<span>{faculty}</span>
 									{isSelected(faculty) && <Check size={20} />}
@@ -320,8 +320,8 @@ const GroupSelectorModal: React.FC<GroupSelectorModalProps> = ({ isOpen, onClose
 									key={major}
 									onClick={() => handleSelection(major)}
 									className={`w-full p-5 border rounded-2xl text-left transition-all flex items-center justify-between ${isSelected(major)
-											? 'bg-primary border-primary text-black font-bold'
-											: 'bg-white/5 hover:bg-white/10 border-white/10 text-white font-medium'
+										? 'bg-primary border-primary text-black font-bold'
+										: 'bg-hover hover:bg-surface border-border text-main font-medium'
 										}`}>
 									<span>{major}</span>
 									{isSelected(major) && <Check size={20} />}
@@ -335,8 +335,8 @@ const GroupSelectorModal: React.FC<GroupSelectorModalProps> = ({ isOpen, onClose
 									key={type.value}
 									onClick={() => handleSelection(type.value)}
 									className={`w-full p-5 border rounded-2xl text-left transition-all flex items-center justify-between ${isSelected(type.value)
-											? 'bg-primary border-primary text-black font-bold'
-											: 'bg-white/5 hover:bg-white/10 border-white/10 text-white font-medium'
+										? 'bg-primary border-primary text-primary-foreground font-bold'
+										: 'bg-hover hover:bg-surface border-border text-main font-medium'
 										}`}>
 									<span>{type.label}</span>
 									{isSelected(type.value) && <Check size={20} />}
@@ -350,8 +350,8 @@ const GroupSelectorModal: React.FC<GroupSelectorModalProps> = ({ isOpen, onClose
 									key={sem}
 									onClick={() => handleSelection(sem)}
 									className={`w-full p-5 border rounded-2xl text-left transition-all flex items-center justify-between ${isSelected(sem)
-											? 'bg-primary border-primary text-black font-bold'
-											: 'bg-white/5 hover:bg-white/10 border-white/10 text-white font-medium'
+										? 'bg-primary border-primary text-primary-foreground font-bold'
+										: 'bg-hover hover:bg-surface border-border text-main font-medium'
 										}`}>
 									<span>Semestr {sem}</span>
 									{isSelected(sem) && <Check size={20} />}
@@ -368,8 +368,8 @@ const GroupSelectorModal: React.FC<GroupSelectorModalProps> = ({ isOpen, onClose
 									key={group.id}
 									onClick={() => handleSelection(group)}
 									className={`w-full p-5 border rounded-2xl text-left transition-all flex items-center justify-between ${isSelected(group)
-											? 'bg-primary border-primary text-black font-bold'
-											: 'bg-white/5 hover:bg-white/10 border-white/10 text-white font-medium'
+										? 'bg-primary border-primary text-primary-foreground font-bold'
+										: 'bg-hover hover:bg-surface border-border text-main font-medium'
 										}`}>
 									<span>{group.name}</span>
 									{isSelected(group) && <Check size={20} />}
@@ -385,7 +385,7 @@ const GroupSelectorModal: React.FC<GroupSelectorModalProps> = ({ isOpen, onClose
 										placeholder="Szukaj wykładowcy..."
 										value={searchTerm}
 										onChange={e => setSearchTerm(e.target.value)}
-										className="w-full p-4 bg-black/20 border border-white/10 rounded-2xl text-white placeholder:text-white/40 focus:outline-none focus:border-primary/50 transition-colors backdrop-blur-md"
+										className="w-full p-4 bg-surface border border-border rounded-2xl text-main placeholder:text-muted focus:outline-none focus:border-primary/50 transition-colors backdrop-blur-md"
 										autoFocus
 									/>
 								</div>
@@ -401,12 +401,12 @@ const GroupSelectorModal: React.FC<GroupSelectorModalProps> = ({ isOpen, onClose
 												key={teacher.id}
 												onClick={() => handleSelection(teacher)}
 												className={`w-full p-4 border rounded-2xl text-left transition-all flex items-center justify-between ${isSelected(teacher)
-														? 'bg-primary border-primary text-black'
-														: 'bg-white/5 hover:bg-white/10 border-white/10 text-white'
+													? 'bg-primary border-primary text-primary-foreground'
+													: 'bg-hover hover:bg-surface border-border text-main'
 													}`}>
 												<div>
 													<span className={`font-medium block ${isSelected(teacher) ? 'font-bold' : ''}`}>{teacher.name}</span>
-													<span className={`text-[11px] ${isSelected(teacher) ? 'text-black/70' : 'text-white/40'}`}>{teacher.faculty}</span>
+													<span className={`text-[11px] ${isSelected(teacher) ? 'text-primary-foreground/70' : 'text-muted'}`}>{teacher.faculty}</span>
 												</div>
 												{isSelected(teacher) && <Check size={20} />}
 											</button>
@@ -424,7 +424,7 @@ const GroupSelectorModal: React.FC<GroupSelectorModalProps> = ({ isOpen, onClose
 				{currentStep !== 'role' && (
 					<button
 						onClick={handleBack}
-						className="flex-1 py-4 px-6 rounded-2xl border border-white/10 text-white font-bold hover:bg-white/5 transition-colors"
+						className="flex-1 py-4 px-6 rounded-2xl border border-border text-main font-bold hover:bg-hover transition-colors"
 					>
 						Wstecz
 					</button>
@@ -434,8 +434,8 @@ const GroupSelectorModal: React.FC<GroupSelectorModalProps> = ({ isOpen, onClose
 						onClick={handleConfirm}
 						disabled={!tempSelection}
 						className={`flex-1 py-4 px-6 rounded-2xl font-bold transition-all shadow-lg ${tempSelection
-								? 'bg-primary text-black shadow-primary/20 hover:bg-primary-hover'
-								: 'bg-white/5 text-white/20 border border-white/5 cursor-not-allowed'
+							? 'bg-primary text-primary-foreground shadow-primary/20 hover:bg-primary-hover'
+							: 'bg-hover text-muted border border-border cursor-not-allowed'
 							}`}
 					>
 						Zatwierdź

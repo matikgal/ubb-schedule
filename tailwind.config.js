@@ -16,6 +16,7 @@ export default {
         surface: "var(--bg-surface)",
         hover: "var(--bg-hover)",
         primary: "var(--primary)",
+        "primary-foreground": "var(--primary-foreground)",
         muted: "var(--text-muted)",
 
         // Semantic Colors

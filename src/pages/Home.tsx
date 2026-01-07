@@ -748,14 +748,14 @@ const Home: React.FC = () => {
 														</span>
 													</div>
 
-													<div className="flex flex-col gap-1.5 text-sm text-muted mb-4">
+													<div className="flex flex-col gap-1.5 text-sm text-main/80 mb-4">
 														<div className="flex items-center gap-2">
 															<MapPin size={13} className="opacity-70 flex-shrink-0" />
 															<span className="text-xs">{evt.room}</span>
 														</div>
 														<div className="flex items-center gap-2">
 															<User size={13} className="opacity-70 flex-shrink-0" />
-															<span className="text-xs opacity-80 line-clamp-1">
+															<span className="text-xs font-medium line-clamp-1">
 																{isTeacherView ? (evt.groups?.join(', ') || 'Brak grupy') : evt.teacher}
 															</span>
 														</div>
@@ -772,7 +772,7 @@ const Home: React.FC = () => {
 														</button>
 													</div>
 
-													<div className="flex justify-between items-center text-xs font-medium text-muted mb-2">
+													<div className="flex justify-between items-center text-xs font-bold text-main/80 mb-2">
 														<span>{evt.startTime}</span>
 														<span>{evt.endTime}</span>
 													</div>
@@ -1017,20 +1017,20 @@ const Home: React.FC = () => {
 				<div className="space-y-4">
 					<div className="p-6 pt-8 space-y-6">
 						<div>
-							<label className="text-xs font-bold text-white/60 uppercase ml-1 mb-2 block">Nazwa</label>
+							<label className="text-xs font-bold text-muted uppercase ml-1 mb-2 block">Nazwa</label>
 							<input
 								type="text"
 								value={newDeadlineTitle}
 								onChange={e => setNewDeadlineTitle(e.target.value)}
-								className="w-full bg-black/20 border border-white/10 rounded-2xl p-4 text-white placeholder:text-white/20 outline-none focus:border-primary/50 transition-colors"
+								className="w-full bg-hover border border-border rounded-2xl p-4 text-main placeholder:text-muted outline-none focus:border-primary/50 transition-colors"
 								placeholder="np. Projekt z Javy"
 								autoFocus
 							/>
 						</div>
 						<div>
-							<label className="text-xs font-bold text-white/60 uppercase ml-1 mb-2 block">Data</label>
+							<label className="text-xs font-bold text-muted uppercase ml-1 mb-2 block">Data</label>
 							<div className="relative cursor-pointer" onClick={() => deadlineInputRef.current?.showPicker()}>
-								<div className="absolute top-4 right-4 text-white pointer-events-none opacity-60">
+								<div className="absolute top-4 right-4 text-main pointer-events-none opacity-60">
 									<Calendar size={20} />
 								</div>
 								<input
@@ -1039,23 +1039,23 @@ const Home: React.FC = () => {
 									value={newDeadlineDate}
 									onChange={e => setNewDeadlineDate(e.target.value)}
 									min={new Date().toISOString().split('T')[0]}
-									className="w-full bg-black/20 border border-white/10 rounded-2xl p-4 text-white outline-none focus:border-primary/50 transition-colors [&::-webkit-calendar-picker-indicator]:opacity-0"
+									className="w-full bg-hover border border-border rounded-2xl p-4 text-main outline-none focus:border-primary/50 transition-colors [&::-webkit-calendar-picker-indicator]:opacity-0"
 								/>
 							</div>
 						</div>
 						<div>
-							<label className="text-xs font-bold text-white/60 uppercase ml-1 mb-2 block">Opis (opcjonalnie)</label>
+							<label className="text-xs font-bold text-muted uppercase ml-1 mb-2 block">Opis (opcjonalnie)</label>
 							<textarea
 								value={newDeadlineDescription}
 								onChange={e => setNewDeadlineDescription(e.target.value)}
-								className="w-full bg-black/20 border border-white/10 rounded-2xl p-4 text-white placeholder:text-white/20 outline-none focus:border-primary/50 transition-colors resize-none"
+								className="w-full bg-hover border border-border rounded-2xl p-4 text-main placeholder:text-muted outline-none focus:border-primary/50 transition-colors resize-none"
 								placeholder="Dodatkowe informacje..."
 								rows={3}
 							/>
 						</div>
 						<button
 							onClick={handleAddDeadline}
-							className="w-full py-4 bg-primary text-black rounded-2xl font-bold text-lg shadow-lg shadow-primary/20 hover:bg-primary-hover active:scale-[0.98] transition-all"
+							className="w-full py-4 bg-primary text-[var(--primary-foreground)] rounded-2xl font-bold text-lg shadow-lg shadow-primary/20 hover:bg-primary-hover active:scale-[0.98] transition-all"
 						>
 							Dodaj deadline
 						</button>

@@ -198,7 +198,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 				style={{
 					paddingBottom: 'env(safe-area-inset-bottom)'
 				}}>
-				<div className="bg-[#1a1d24]/95 backdrop-blur-2xl border border-white/10 rounded-2xl p-2 flex items-center justify-between shadow-2xl shadow-black/50 relative overflow-hidden">
+				<div className="bg-surface/95 backdrop-blur-2xl border border-border rounded-2xl p-2 flex items-center justify-between shadow-2xl relative overflow-hidden">
 					{navItems.map(item => {
 						const isActive = location.pathname === item.path
 						return (
@@ -227,7 +227,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 											"transition-all duration-300",
 											isActive
 												? 'text-primary drop-shadow-[0_0_8px_rgba(var(--primary),0.5)] scale-110'
-												: 'text-muted group-hover:text-white'
+												: 'text-muted group-hover:text-main'
 										)}
 									/>
 								</span>

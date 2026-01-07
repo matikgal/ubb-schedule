@@ -51,19 +51,19 @@ const NotesModal: React.FC<NotesModalProps> = ({ isOpen, onClose, subjectName })
             <div className="flex flex-col h-full p-6">
                 {/* Input Area */}
                 <div className="mb-6 relative shrink-0">
-                    <div className="absolute top-4 left-4 text-white/40 pointer-events-none">
+                    <div className="absolute top-4 left-4 text-muted pointer-events-none">
                         <PenLine size={20} />
                     </div>
                     <textarea
                         value={newNote}
                         onChange={(e) => setNewNote(e.target.value)}
                         placeholder="Dodaj nową notatkę..."
-                        className="w-full bg-black/20 border border-white/10 rounded-2xl p-4 pl-12 pr-14 text-white placeholder:text-white/60 focus:outline-none focus:bg-black/40 focus:border-primary/50 resize-none h-32 transition-all shadow-inner"
+                        className="w-full bg-hover border border-border rounded-2xl p-4 pl-12 pr-14 text-main placeholder:text-muted focus:outline-none focus:bg-surface focus:border-primary/50 resize-none h-32 transition-all shadow-inner"
                     />
                     <button
                         onClick={handleAddNote}
                         disabled={!newNote.trim()}
-                        className="absolute bottom-3 right-3 p-2.5 bg-primary text-black rounded-xl disabled:opacity-30 disabled:cursor-not-allowed hover:scale-105 active:scale-95 transition-all shadow-lg shadow-primary/20"
+                        className="absolute bottom-3 right-3 p-2.5 bg-primary text-primary-foreground rounded-xl disabled:opacity-30 disabled:cursor-not-allowed hover:scale-105 active:scale-95 transition-all shadow-lg shadow-primary/20"
                     >
                         <Plus size={20} />
                     </button>
@@ -76,16 +76,16 @@ const NotesModal: React.FC<NotesModalProps> = ({ isOpen, onClose, subjectName })
                             <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
                         </div>
                     ) : notes.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center h-full text-white/20">
+                        <div className="flex flex-col items-center justify-center h-full text-muted/40">
                             <StickyNote size={64} className="mb-4 opacity-50" />
                             <p className="font-medium">Brak notatek</p>
                             <p className="text-sm">Dodaj pierwszą notatkę powyżej</p>
                         </div>
                     ) : (
                         notes.map((note) => (
-                            <div key={note.id} className="bg-white/5 border border-white/10 rounded-2xl p-5 group relative animate-fade-in hover:bg-white/[0.07] transition-colors">
+                            <div key={note.id} className="bg-hover border border-border rounded-2xl p-5 group relative animate-fade-in hover:bg-surface transition-colors">
                                 <p className="text-sm text-main whitespace-pre-wrap leading-relaxed pr-8">{note.content}</p>
-                                <div className="flex justify-between items-center mt-3 pt-3 border-t border-white/5">
+                                <div className="flex justify-between items-center mt-3 pt-3 border-t border-border/50">
                                     <span className="text-[10px] text-muted font-medium">
                                         {new Date(note.createdAt).toLocaleString('pl-PL', {
                                             day: 'numeric',

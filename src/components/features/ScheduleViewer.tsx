@@ -264,7 +264,7 @@ const ScheduleViewer: React.FC<ScheduleViewerProps> = ({
 										}`}>
 									<div className="flex items-center gap-4">
 										<div
-											className={`flex flex-col items-center justify-center w-10 h-10 rounded-xl border ${isToday ? 'bg-primary text-black border-primary' : 'bg-surface border-border text-muted'
+											className={`flex flex-col items-center justify-center w-10 h-10 rounded-xl border ${isToday ? 'bg-primary text-primary-foreground border-primary' : 'bg-surface border-border text-muted'
 												}`}>
 											<span className="text-[10px] font-bold uppercase leading-none">
 												{getDayName(apiDayOfWeek === 7 ? 0 : apiDayOfWeek).substring(0, 3)}

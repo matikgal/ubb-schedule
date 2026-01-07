@@ -4,7 +4,8 @@
 
 @layer base {
   :root {
-    --primary: #ffffff;
+    --primary: #0f172a; /* Slate 900 */
+    --primary-foreground: #ffffff; /* White text on primary */
 
     /* Semantic Colors for Class Types */
     --color-lecture: #3b82f6; /* Blue-500 */
@@ -22,6 +23,9 @@
   }
 
   html.dark {
+    --primary: #ffffff;
+    --primary-foreground: #000000;
+
     --bg-app: #0f1115;
     --bg-surface: #181a1f;
     --text-main: #f1f5f9;

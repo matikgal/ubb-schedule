@@ -2,7 +2,7 @@ import type { CapacitorConfig } from '@capacitor/cli'
 
 const config: CapacitorConfig = {
 	appId: 'com.unischedule.app',
-	appName: 'UniSchedule',
+	appName: 'UBB Plan',
 	webDir: 'dist',
 	server: {
 		androidScheme: 'https',
