@@ -496,6 +496,11 @@ const SettingsPage = () => {
 				title="Kontakt"
 				className="max-h-[600px]"
 			>
+				<div className="mt-8 text-center">
+					<p className="text-xs text-muted/50 font-mono">
+						v1.1.5
+					</p>
+				</div>
 				<div className="space-y-4">
 					<p className="text-sm text-muted">
 						Masz pomysł na nową funkcję? Znalazłeś błąd? Napisz do nas!
