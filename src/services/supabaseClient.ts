@@ -9,8 +9,8 @@ let supabaseInstance: SupabaseClient | null = null
 if (supabaseUrl && supabaseAnonKey && supabaseUrl !== 'your_supabase_url_here') {
 	try {
 		supabaseInstance = createClient(supabaseUrl, supabaseAnonKey)
-	} catch (error) {
-		console.warn('Failed to initialize Supabase, using offline mode:', error)
+	} catch {
+		// Silent fail - use offline mode
 	}
 }
 

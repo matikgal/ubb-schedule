@@ -60,8 +60,7 @@ export async function syncDatabase(force: boolean = false): Promise<void> {
             .single()
 
         if (remoteError) {
-            console.error('Failed to check remote version:', remoteError)
-            // If we can't check remote, and we have local data, skip sync to be safe (offline mode)
+            // If we can't check remote, and we have local data, skip sync (offline mode)
             if (syncState.lastSync) return
             throw new Error('Could not connect to server to check version')
         }
@@ -178,7 +177,6 @@ export async function syncDatabase(force: boolean = false): Promise<void> {
         })
 
     } catch (error: any) {
-        console.error('Sync failed:', error)
         updateState({
             isSyncing: false,
             error: error.message || 'Unknown error',

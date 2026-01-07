@@ -34,8 +34,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 				const { getSelectedGroup } = await import('@/services/groupService')
 				const group = await getSelectedGroup()
 				setIsTeacher(group?.type === 'teacher')
-			} catch (error) {
-				console.error('Error checking group type:', error)
+			} catch {
+				// Silent fail - default to student
 			}
 		}
 		checkGroupType()
@@ -51,8 +51,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 			try {
 				const { initNotifications } = await import('@/services/notificationService')
 				await initNotifications()
-			} catch (e) {
-				console.error('Failed to init notifications', e)
+			} catch {
+				// Silent fail - notifications are optional
 			}
 
 			// Fetch semester info (will wait for DB init inside service)
@@ -109,6 +109,14 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
 	return (
 		<div className="min-h-screen relative overflow-x-hidden text-main font-sans transition-colors duration-300">
+			{/* Skip Link for Accessibility */}
+			<a
+				href="#main-content"
+				className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:bg-primary focus:text-black focus:px-4 focus:py-2 focus:rounded-lg focus:font-bold"
+			>
+				Przejdź do treści
+			</a>
+
 			{/* Data Sync Indicator */}
 			<DataSyncIndicator />
 
@@ -160,7 +168,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 					<div className="w-12 h-12 rounded-full overflow-hidden shadow-lg bg-surface border border-border relative z-10 transition-transform duration-300 group-hover:scale-105 group-active:scale-95">
 						<img
 							src={`https://api.dicebear.com/9.x/notionists/svg?seed=${avatarSeed}&backgroundColor=b6e3f4`}
-							alt="Profil"
+							alt={`Awatar użytkownika ${nickname}`}
 							className="w-full h-full object-cover bg-white"
 						/>
 					</div>
@@ -169,6 +177,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
 			{/* Main Content */}
 			<main
+				id="main-content"
 				className="relative z-10 px-5 max-w-lg mx-auto md:max-w-2xl"
 				style={{
 					paddingTop: 'calc(7rem + env(safe-area-inset-top))',
@@ -185,6 +194,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 			{/* Floating Modern Navigation (Stable) */}
 			<nav
 				className="fixed bottom-6 left-0 right-0 mx-auto z-50 w-[96%] max-w-lg"
+				aria-label="Główna nawigacja"
 				style={{
 					paddingBottom: 'env(safe-area-inset-bottom)'
 				}}>
@@ -196,6 +206,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 								key={item.path}
 								onClick={() => handleNavClick(item.path)}
 								className="relative flex-1 h-14 flex flex-col items-center justify-center outline-none group"
+								aria-label={item.label}
+								aria-current={isActive ? 'page' : undefined}
 							>
 								{/* Active Indicator (Sliding Pill) */}
 								{isActive && (

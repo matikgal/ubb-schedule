@@ -55,9 +55,9 @@ export default {
           "0%": { opacity: "0", transform: "translateY(20px)" },
           "100%": { opacity: "1", transform: "translateY(0)" },
         },
-        slideDown: { // Added based on usage in DataSyncIndicator
-           "0%": { opacity: "0", transform: "translate(-50%, -20px)" },
-           "100%": { opacity: "1", transform: "translate(-50%, 0)" },
+        slideDown: {
+          "0%": { opacity: "0", transform: "translateY(-10px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
         },
         shimmer: {
           "0%": { backgroundPosition: "-200% 0" },

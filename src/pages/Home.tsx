@@ -104,6 +104,7 @@ const Home: React.FC = () => {
 	// Week handling
 	const [availableWeeks, setAvailableWeeks] = useState<Array<{ id: string; label: string; start: Date; end: Date }>>([])
 	const [loadedWeekId, setLoadedWeekId] = useState<string | null>(null)
+	const [isTeacherView, setIsTeacherView] = useState(false)
 
 	// --- Load Initial Data (only once) ---
 	const loadScheduleData = async (forceRefresh = false) => {
@@ -117,15 +118,17 @@ const Home: React.FC = () => {
 		}
 
 		setIsDemo(false)
+		const isTeacher = selectedGroup.type === 'teacher'
+		setIsTeacherView(isTeacher)
 
 		// 1. Load available weeks if not loaded
 		let weeks = availableWeeks
 		if (weeks.length === 0 || forceRefresh) {
 			try {
-				weeks = await getAvailableWeeks(selectedGroup.id)
+				weeks = await getAvailableWeeks(selectedGroup.id, isTeacher)
 				setAvailableWeeks(weeks)
-			} catch (e) {
-				console.error('Error loading weeks:', e)
+			} catch {
+				// Silent fail
 			}
 		}
 
@@ -141,14 +144,13 @@ const Home: React.FC = () => {
 		if (weekId && (weekId !== loadedWeekId || forceRefresh)) {
 			setIsLoadingSchedule(true)
 			try {
-				const allEvents = await fetchScheduleForWeek(selectedGroup.id, weekId)
+				const allEvents = await fetchScheduleForWeek(selectedGroup.id, weekId, false, isTeacher)
 				setAllEventsCache(allEvents)
 				setLoadedWeekId(weekId)
 
 				// Schedule notifications for deadlines
 				// Removed automatic scanning as per user request (manual list only)
-			} catch (error) {
-				console.error('Error loading schedule:', error)
+			} catch {
 				setAllEventsCache([])
 			} finally {
 				setIsLoadingSchedule(false)
@@ -753,7 +755,9 @@ const Home: React.FC = () => {
 														</div>
 														<div className="flex items-center gap-2">
 															<User size={13} className="opacity-70 flex-shrink-0" />
-															<span className="text-xs opacity-80 line-clamp-1">{evt.teacher}</span>
+															<span className="text-xs opacity-80 line-clamp-1">
+																{isTeacherView ? (evt.groups?.join(', ') || 'Brak grupy') : evt.teacher}
+															</span>
 														</div>
 													</div>
 

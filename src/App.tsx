@@ -2,7 +2,7 @@ import React, { useState, useEffect, Suspense } from 'react'
 import { HashRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom'
 import Layout from '@/components/layout/Layout'
 import Preloader from '@/components/ui/Preloader'
-import GroupSelectorModal from '@/components/features/GroupSelectorModal'
+import ErrorBoundary from '@/components/ui/ErrorBoundary'
 import { ChevronLeft } from 'lucide-react'
 
 // Lazy Load Pages
@@ -80,7 +80,7 @@ const App: React.FC = () => {
 				import('./pages/Settings')
 			]
 			// We don't await here, just start fetching
-			Promise.all(pages).catch(err => console.debug('Prefetch error:', err))
+			Promise.all(pages).catch(() => { })
 		}
 
 		initNative()
@@ -102,7 +102,7 @@ const App: React.FC = () => {
 	}
 
 	return (
-		<>
+		<ErrorBoundary>
 			{loading && <Preloader onFinish={handlePreloaderFinish} />}
 			<Router>
 				<Layout>
@@ -118,7 +118,7 @@ const App: React.FC = () => {
 					</Suspense>
 				</Layout>
 			</Router>
-		</>
+		</ErrorBoundary>
 	)
 }
 

@@ -18,11 +18,12 @@ import {
 import { THEME_COLORS, useTheme } from '@/context/ThemeContext'
 import GroupSelectorModal from '@/components/features/GroupSelectorModal'
 import Modal from '@/components/ui/Modal'
+import { APP_VERSION, CONTACT_EMAIL } from '@/constants/config'
 
 const SettingsPage = () => {
 	const [groupData, setGroupData] = useState<any>(null)
 	const [isGroupSelectorOpen, setIsGroupSelectorOpen] = useState(false)
-	
+
 	// Contact Modal State
 	const [isContactModalOpen, setIsContactModalOpen] = useState(false)
 	const [contactType, setContactType] = useState<'bug' | 'idea' | 'collab'>('bug')
@@ -80,7 +81,7 @@ const SettingsPage = () => {
 			})
 			return unsubscribe
 		}
-		
+
 		const cleanupPromise = loadSync()
 		return () => {
 			cleanupPromise.then(unsubscribe => unsubscribe && unsubscribe())
@@ -92,9 +93,7 @@ const SettingsPage = () => {
 		syncDatabase(true)
 	}
 
-	// Mock Data
-	const appVersion = '1.0.0'
-	// const lastSyncDate = '15 Paź 2023, 04:30' // Replaced by real data
+	// Avatar options
 	const avatarOptions = ['Alexander', 'Aneka', 'Felix', 'Jake', 'Jocelyn', 'Micah', 'Minia', 'Robert', 'Sorell', 'Zoe']
 
 	// Clear Data Modal State
@@ -119,8 +118,7 @@ const SettingsPage = () => {
 
 			// Restart aplikacji
 			window.location.reload()
-		} catch (error) {
-			console.error('Error clearing data:', error)
+		} catch {
 			alert('Wystąpił błąd podczas czyszczenia danych.')
 		}
 	}
@@ -135,9 +133,9 @@ const SettingsPage = () => {
 	const handleSendContact = () => {
 		if (!contactMessage.trim()) return
 
-		const subject = contactType === 'bug' ? 'Zgłoszenie błędu - UniSchedule' : 'Pomysł na funkcję - UniSchedule'
+		const subject = contactType === 'bug' ? 'Zgłoszenie błędu - UBB Plan' : 'Pomysł na funkcję - UBB Plan'
 		const body = encodeURIComponent(contactMessage)
-		const mailtoLink = `mailto:twoj-email@example.com?subject=${encodeURIComponent(subject)}&body=${body}`
+		const mailtoLink = `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${body}`
 
 		window.location.href = mailtoLink
 		setIsContactModalOpen(false)
@@ -178,9 +176,8 @@ const SettingsPage = () => {
 										setAvatarSeed(seed)
 										setIsAvatarExpanded(false)
 									}}
-									className={`w-10 h-10 rounded-full overflow-hidden border-2 transition-all ${
-										avatarSeed === seed ? 'border-primary scale-110' : 'border-transparent opacity-70 hover:opacity-100'
-									}`}>
+									className={`w-10 h-10 rounded-full overflow-hidden border-2 transition-all ${avatarSeed === seed ? 'border-primary scale-110' : 'border-transparent opacity-70 hover:opacity-100'
+										}`}>
 									<img
 										src={`https://api.dicebear.com/9.x/notionists/svg?seed=${seed}&backgroundColor=b6e3f4`}
 										alt={seed}
@@ -213,9 +210,8 @@ const SettingsPage = () => {
 										setIsEditingName(true)
 									}
 								}}
-								className={`text-xl font-bold text-main flex items-center gap-2 text-center ${
-									groupData?.type !== 'teacher' ? 'cursor-pointer hover:text-primary transition-colors' : ''
-								}`}>
+								className={`text-xl font-bold text-main flex items-center gap-2 text-center ${groupData?.type !== 'teacher' ? 'cursor-pointer hover:text-primary transition-colors' : ''
+									}`}>
 								{nickname}
 								{groupData?.type !== 'teacher' && <Edit3 size={14} className="text-muted opacity-50" />}
 							</h2>
@@ -269,13 +265,11 @@ const SettingsPage = () => {
 							<span className="text-main text-sm font-medium">Tryb Ciemny</span>
 						</div>
 						<button
-							className={`w-12 h-6 rounded-full p-1 transition-colors duration-300 relative ${
-								isDarkMode ? 'bg-green-500' : 'bg-slate-300'
-							}`}>
+							className={`w-12 h-6 rounded-full p-1 transition-colors duration-300 relative ${isDarkMode ? 'bg-green-500' : 'bg-slate-300'
+								}`}>
 							<div
-								className={`w-4 h-4 rounded-full bg-white shadow-sm transition-transform duration-300 ${
-									isDarkMode ? 'translate-x-6' : 'translate-x-0'
-								}`}></div>
+								className={`w-4 h-4 rounded-full bg-white shadow-sm transition-transform duration-300 ${isDarkMode ? 'translate-x-6' : 'translate-x-0'
+									}`}></div>
 						</button>
 					</div>
 
@@ -308,11 +302,10 @@ const SettingsPage = () => {
 										onClick={() => setTheme(theme.id)}
 										className="flex flex-col items-center gap-2 group min-w-[50px]">
 										<div
-											className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${
-												currentTheme.id === theme.id
-													? 'ring-2 ring-primary scale-110'
-													: 'opacity-70 group-hover:opacity-100'
-											}`}
+											className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${currentTheme.id === theme.id
+												? 'ring-2 ring-primary scale-110'
+												: 'opacity-70 group-hover:opacity-100'
+												}`}
 											style={{ backgroundColor: theme.hex }}>
 											{currentTheme.id === theme.id && (
 												<Check
@@ -322,9 +315,8 @@ const SettingsPage = () => {
 											)}
 										</div>
 										<span
-											className={`text-[9px] font-medium ${
-												currentTheme.id === theme.id ? 'text-primary' : 'text-muted'
-											}`}>
+											className={`text-[9px] font-medium ${currentTheme.id === theme.id ? 'text-primary' : 'text-muted'
+												}`}>
 											{theme.name}
 										</span>
 									</button>
@@ -339,7 +331,7 @@ const SettingsPage = () => {
 			<section className="space-y-3">
 				<h2 className="text-xs font-bold uppercase tracking-wide text-muted ml-1">Dane i System</h2>
 				<div className="bg-surface rounded-2xl overflow-hidden border border-border shadow-sm">
-					<div 
+					<div
 						onClick={() => handleManualSync()}
 						className={`p-4 flex items-center justify-between border-b border-border cursor-pointer hover:bg-hover transition-colors group ${syncStatus.isSyncing ? 'pointer-events-none opacity-70' : ''}`}
 					>
@@ -350,8 +342,8 @@ const SettingsPage = () => {
 									{syncStatus.isSyncing ? 'Synchronizacja...' : 'Ostatnia synchronizacja'}
 								</span>
 								<span className="text-[10px] text-muted">
-									{syncStatus.isSyncing 
-										? `Pobieranie danych (${Math.round(syncStatus.progress)}%)` 
+									{syncStatus.isSyncing
+										? `Pobieranie danych (${Math.round(syncStatus.progress)}%)`
 										: (syncStatus.lastSync ? new Date(syncStatus.lastSync).toLocaleString('pl-PL', {
 											day: 'numeric',
 											month: 'short',
@@ -362,11 +354,10 @@ const SettingsPage = () => {
 								</span>
 							</div>
 						</div>
-						<div className={`px-2 py-1 text-[10px] font-bold rounded transition-colors ${
-							syncStatus.isSyncing 
-								? 'bg-primary/10 text-primary' 
-								: (syncStatus.error ? 'bg-red-500/10 text-red-500' : 'bg-green-500/10 text-green-500')
-						}`}>
+						<div className={`px-2 py-1 text-[10px] font-bold rounded transition-colors ${syncStatus.isSyncing
+							? 'bg-primary/10 text-primary'
+							: (syncStatus.error ? 'bg-red-500/10 text-red-500' : 'bg-green-500/10 text-green-500')
+							}`}>
 							{syncStatus.isSyncing ? 'TRWA' : (syncStatus.error ? 'BŁĄD' : 'AKTUALNA')}
 						</div>
 					</div>
@@ -407,7 +398,7 @@ const SettingsPage = () => {
 
 			<div className="text-center space-y-4 pt-6 pb-4 border-t border-border">
 				<div className="flex justify-center gap-3 text-xs text-muted font-bold tracking-wide uppercase">
-					<span>Wersja {appVersion}</span>
+					<span>Wersja {APP_VERSION}</span>
 					<span>•</span>
 					<span className="flex items-center gap-1">
 						Źródło:
@@ -445,7 +436,7 @@ const SettingsPage = () => {
 							<span>Capacitor</span>
 						</div>
 					</div>
-					
+
 					<p className="text-[9px] text-muted/40 pt-1">Assets: DiceBear, Unsplash, Lucide Icons</p>
 				</div>
 			</div>
@@ -513,21 +504,19 @@ const SettingsPage = () => {
 					<div className="grid grid-cols-2 gap-2">
 						<button
 							onClick={() => setContactType('bug')}
-							className={`p-2 rounded-xl text-xs font-bold border transition-all ${
-								contactType === 'bug' 
-									? 'bg-red-500/10 border-red-500 text-red-500' 
-									: 'bg-background border-border text-muted hover:border-red-500/50'
-							}`}
+							className={`p-2 rounded-xl text-xs font-bold border transition-all ${contactType === 'bug'
+								? 'bg-red-500/10 border-red-500 text-red-500'
+								: 'bg-background border-border text-muted hover:border-red-500/50'
+								}`}
 						>
 							Błąd
 						</button>
 						<button
 							onClick={() => setContactType('idea')}
-							className={`p-2 rounded-xl text-xs font-bold border transition-all ${
-								contactType === 'idea' 
-									? 'bg-yellow-500/10 border-yellow-500 text-yellow-500' 
-									: 'bg-background border-border text-muted hover:border-yellow-500/50'
-							}`}
+							className={`p-2 rounded-xl text-xs font-bold border transition-all ${contactType === 'idea'
+								? 'bg-yellow-500/10 border-yellow-500 text-yellow-500'
+								: 'bg-background border-border text-muted hover:border-yellow-500/50'
+								}`}
 						>
 							Pomysł
 						</button>

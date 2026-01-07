@@ -77,7 +77,6 @@ export async function fetchScheduleForWeek(
 			throw error
 		}
 
-		console.error('Unexpected error in fetchScheduleForWeek:', error)
 		throw new Error(ERROR_MESSAGES.FETCH_FAILED)
 	}
 }
@@ -122,8 +121,7 @@ export async function getAvailableWeeks(
 
 		// Fill gaps
 		return fillWeekGaps(result)
-	} catch (error) {
-		console.error('Error getting available weeks:', error)
+	} catch {
 		return []
 	}
 }
@@ -204,8 +202,7 @@ export async function fetchSemesterInfo(): Promise<SemesterInfo | null> {
 			semester: row.semester as 'Zimowy' | 'Letni',
 			academic_year: row.academic_year
 		}
-	} catch (error) {
-		console.error('Error fetching semester info:', error)
+	} catch {
 		return null
 	}
 }

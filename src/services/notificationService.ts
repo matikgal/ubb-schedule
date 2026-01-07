@@ -13,8 +13,8 @@ export const initNotifications = async () => {
                 vibration: true,
             })
         }
-    } catch (e) {
-        console.error('Failed to init notifications:', e)
+    } catch {
+        // Silent fail - notifications are optional
     }
 }
 
@@ -56,8 +56,8 @@ export const scheduleManualDeadline = async (id: string, title: string, dateStr:
                 extra: { deadlineId: id }
             }]
         })
-    } catch (e) {
-        console.error('Failed to schedule deadline:', e)
+    } catch {
+        // Silent fail
     }
 }
 
@@ -65,8 +65,8 @@ export const cancelDeadlineNotification = async (id: string) => {
     try {
         const notificationId = Math.abs(stringHash(id))
         await LocalNotifications.cancel({ notifications: [{ id: notificationId }] })
-    } catch (e) {
-        console.error('Failed to cancel notification:', e)
+    } catch {
+        // Silent fail
     }
 }
 

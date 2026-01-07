@@ -19,17 +19,12 @@ export const storage = {
 				localStorage.setItem(key, value)
 			} catch (e) {
 				if (e instanceof DOMException && (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED')) {
-					console.warn('⚠️ LocalStorage quota exceeded. Clearing cache and retrying...')
 					try {
-						// Clear only cache items, preserve settings if possible (or just clear all for simplicity)
-						// For now, let's try to clear everything to recover
 						localStorage.clear()
 						localStorage.setItem(key, value)
-					} catch (retryError) {
-						console.error('❌ Failed to save item even after clearing storage:', retryError)
+					} catch {
+						// Silent fail
 					}
-				} else {
-					console.error('Error saving to localStorage:', e)
 				}
 			}
 		}

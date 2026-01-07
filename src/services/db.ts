@@ -38,7 +38,6 @@ export async function initDB(): Promise<Database> {
 
             return db
         } catch (error) {
-            console.error('Failed to initialize database:', error)
             initPromise = null
             throw error
         }

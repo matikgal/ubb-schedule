@@ -87,15 +87,13 @@ async function getTeacherFullName(teacherId: number): Promise<string | null> {
       .single();
 
     if (error || !data) {
-      console.warn(`Teacher ${teacherId} not found in teacher_schedules`);
       return null;
     }
 
     // Zapisz w cache
     teacherNamesCache.set(teacherId, data.teacher_name);
     return data.teacher_name;
-  } catch (error) {
-    console.error('Error fetching teacher name:', error);
+  } catch {
     return null;
   }
 }

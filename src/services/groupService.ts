@@ -1,6 +1,6 @@
 import { execQuery, initDB } from './db'
 import { GroupInfo } from '@/types'
-import { ERROR_MESSAGES } from '@/constants/'
+import { ERROR_MESSAGES } from '@/constants/errorMessages'
 
 // Helper to ensure DB is ready
 async function ensureDB() {
@@ -40,8 +40,7 @@ export async function fetchFaculties(): Promise<string[]> {
 			ORDER BY faculty
 		`)
 		return results.map(row => row.faculty).filter(Boolean)
-	} catch (error) {
-		console.error('Error fetching faculties:', error)
+	} catch {
 		return []
 	}
 }
@@ -59,8 +58,7 @@ export async function fetchMajorsForFaculty(faculty: string): Promise<string[]> 
 		const cleanedMajors = rawMajors.map(major => cleanMajorName(major))
 		const uniqueMajors = Array.from(new Set(cleanedMajors))
 		return uniqueMajors.sort()
-	} catch (error) {
-		console.error('Error fetching majors:', error)
+	} catch {
 		return []
 	}
 }
@@ -115,8 +113,7 @@ export async function fetchGroupsForMajor(
 		}
 
 		return groups
-	} catch (error) {
-		console.error('Error fetching groups:', error)
+	} catch {
 		return []
 	}
 }
@@ -141,8 +138,7 @@ export async function fetchTeachersForFaculty(faculty: string): Promise<GroupInf
 			phone: row.phone,
 			office: row.office,
 		}))
-	} catch (error) {
-		console.error('Error fetching teachers:', error)
+	} catch {
 		return []
 	}
 }
@@ -167,8 +163,7 @@ export async function fetchAllTeachers(): Promise<GroupInfo[]> {
 			phone: row.phone,
 			office: row.office,
 		}))
-	} catch (error) {
-		console.error('Error fetching all teachers:', error)
+	} catch {
 		return []
 	}
 }
@@ -190,8 +185,7 @@ export async function fetchAllRooms(): Promise<GroupInfo[]> {
 			weeksCount: row.weeks_count,
 			type: 'room',
 		}))
-	} catch (error) {
-		console.error('Error fetching rooms:', error)
+	} catch {
 		return []
 	}
 }
@@ -240,8 +234,7 @@ export async function findGroupsByName(name: string): Promise<GroupInfo[]> {
 			semester: extractSemesterFromGroupName(row.name) || undefined,
 			type: 'group',
 		}))
-	} catch (error) {
-		console.error('Error finding groups by name:', error)
+	} catch {
 		return []
 	}
 }
